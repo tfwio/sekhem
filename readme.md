@@ -18,20 +18,28 @@ they must not conflict with one another!
 All of our configuration takes place in a configure function...
 
 ```go
-
-func configure(faux string, pathIndex ...string) {
+func configure(pathIndex ...string) {
 
 	serveFiles = []string{`index.html`, `json.json`, `bundle.js`, `favicon.ico`}
 	serveTLS = len(os.Args) == 2 && os.Args[1] == "tls"
 	servePort = ":5500"
 	serveHost = "tfw.io"
 	servePath = "v"
+	serveProt := "http"
+
+	if serveTLS == true {
+		serveProt = "https"
+	}
+
+	faux := fmt.Sprintf(`%s://%s%s/%s`, serveProt, serveHost, servePort, servePath)
+	println("- path for indexed files: ", faux)
 
 	rootConfig = RootConfig{
-		Path: "/",
-		Directory: "public",
-		Default: "index.html",
-		Files: []string{`index.html`, `json.json`, `bundle.js`, `favicon.ico`},
+		Path:         "/",
+		Directory:    ".\\public",
+		Files:        []string{`json.json`, `bundle.js`, `favicon.ico`},
+		Default:      "index.html",
+		AliasDefault: []string{"home", "index.htm", "index.html", "index", "default", "default.htm"},
 	}
 
 	tlsCrt = "data\\ia.crt"
