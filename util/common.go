@@ -94,8 +94,7 @@ func TrimUnixSlashRight(pStrInput string) string {
 	return strings.TrimRight(pStrInput, "/")
 }
 
-// Space2Dash converts or replaces all spaces in a string with
-// a small-dash.
+// Space2Dash converts or replaces all spaces in a string with a small-dash.
 func Space2Dash(pStrInput string) string {
 	return strings.Replace(pStrInput, " ", "-", -1)
 }
@@ -105,7 +104,8 @@ func UnixSlash(instr string) string {
 	return strings.Replace(instr, "\\", "/", -1)
 }
 
-// OSSlash converts all backslash to forward-slash (if OS is not windows)
+// OSSlash converts all backslash to forward-slash (if OS is not windows).
+// It'd probably be best to just use your standard `fileutil.Abs(…)`.
 func OSSlash(instr string) string {
 	if runtime.GOOS == "windows" {
 		return strings.Replace(instr, "\\", "/", -1)
@@ -116,7 +116,7 @@ func OSSlash(instr string) string {
 // StrTransformLiteral takes a literal string stuff like `EOL` and asserts
 // literal code(s) such as `\n` and takes a measure or two to clean up the
 // string to something a bit more normative.  You might say, this makes
-// a string suitable for a JSON value.
+// a string suitable for a JSON value ---might not.
 func StrTransformLiteral(input string) (str string) {
 	str = strings.Replace(input, `\r\n`, "\n", -1)
 	str = strings.Replace(str, `\n`, "\n", -1)
@@ -144,7 +144,7 @@ func ConvertTransient(pInput string) string {
 //	fmt.Printf("%x\n", bs)
 //}
 
-// sha1string func
+// Sha1String just gets SHA1.
 func Sha1String(pStrData string) string {
 	hasher := sha1.New()
 	hasher.Write([]byte(pStrData))
@@ -205,4 +205,27 @@ func Insert(slice []int, index, value int) []int {
 	slice[index] = value
 	// Return the result.
 	return slice
+}
+
+// CharIsNumber checks wether input string contains all digit characters.
+func CharIsNumber(input string) bool {
+	for _, b := range []byte(input) {
+		if !(b >= 48 && b <= 57) {
+			return false
+		}
+	}
+	return true
+}
+
+const unknownString = "unknown date"
+
+// CheckDateString checks the beginning of a file-name for an 8-digit date-string;
+// I.E.: `YYYYMMDD`
+func CheckDateString(input string) string {
+	result := strings.Index(input, " ")
+	// println(fmt.Sprintf("first-index:  %d", result))
+	if result >= 0 && result == 8 && CharIsNumber(input[:8]) {
+		return input[:8]
+	}
+	return unknownString
 }

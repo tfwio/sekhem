@@ -13,19 +13,18 @@ import (
 	"tfw.io/Go/fsindex/util"
 )
 
-const unknownString = "unknown date"
-
 var (
 	locations []StaticPath
 
 	rootConfig RootConfig
-	serveFiles []string
 
 	serveHost string
-	servePath string
 	servePort string
-	serveTLS  bool
-	// (<serveTls>?"HTTPS:HTTP")://<serveHost>:<servePort>/<servePath>
+	serveProt = "http" // default="http" unless `os.Args[1]` is "tls".
+	serveTLS  bool     // default=false unless `os.Args[1] == "tls"`
+
+	indexRoot string // sub-path
+	indexPath string // basis for generated URLs for the indexer.
 
 	tlsKey string
 	tlsCrt string
@@ -85,22 +84,21 @@ func (m *SimpleModel) create() {
 	m.PathSHA1 = make(map[string]*fsindex.PathEntry)
 }
 
+func iif(condition bool, onTrue string, onFalse string) string {
+	if condition == true {
+		return onTrue
+	}
+	return onFalse
+}
+
 // FIXME: `pathIndex[0]` is used (solely).
 func configure(pathIndex ...string) {
 
-	serveFiles = []string{`index.html`, `json.json`, `bundle.js`, `favicon.ico`}
 	serveTLS = len(os.Args) == 2 && os.Args[1] == "tls"
-	servePort = ":5500"
-	serveHost = "tfw.io"
-	servePath = "v"
-	serveProt := "http"
+	serveProt, servePort, serveHost, indexRoot = iif(serveTLS, "https", "http"), ":5500", "tfw.io", "v"
+	indexPath = fmt.Sprintf(`%s://%s%s/%s`, serveProt, serveHost, servePort, indexRoot)
 
-	if serveTLS == true {
-		serveProt = "https"
-	}
-
-	faux := fmt.Sprintf(`%s://%s%s/%s`, serveProt, serveHost, servePort, servePath)
-	println("- path for indexed files: ", faux)
+	println("- path for indexed files: ", indexPath)
 
 	rootConfig = RootConfig{
 		Path:         "/",
@@ -110,8 +108,7 @@ func configure(pathIndex ...string) {
 		AliasDefault: []string{"home", "index.htm", "index.html", "index", "default", "default.htm"},
 	}
 
-	tlsCrt = "data\\ia.crt"
-	tlsKey = "data\\ia.key"
+	tlsCrt, tlsKey = "data\\ia.crt", "data\\ia.key"
 
 	locations = []StaticPath{
 		StaticPath{
@@ -140,7 +137,7 @@ func configure(pathIndex ...string) {
 				SHA1:     util.Sha1String(pathIndex[0]),
 			},
 			IsRoot: true},
-		FauxPath:    faux,
+		FauxPath:    indexPath,
 		FileFilter:  []fsindex.FileSpec{localMedia, localMarkdown},
 		IgnorePaths: []string{},
 	}
@@ -198,24 +195,6 @@ func main() {
 
 func serveJSONPathEntry(pContext *gin.Context) {
 	pContext.JSON(http.StatusOK, &pathEntry)
-}
-
-func charIsNumber(input string) bool {
-	for _, b := range []byte(input) {
-		if !(b >= 48 && b <= 57) {
-			return false
-		}
-	}
-	return true
-}
-
-func checkDateString(input string) string {
-	result := strings.Index(input, " ")
-	// println(fmt.Sprintf("first-index:  %d", result))
-	if result >= 0 && result == 8 && charIsNumber(input[:8]) {
-		return input[:8]
-	}
-	return unknownString
 }
 
 func makeMdl() SimpleModel {
