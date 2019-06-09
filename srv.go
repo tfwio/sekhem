@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,6 +15,8 @@ import (
 	"tfw.io/Go/fsindex/util"
 )
 
+const config_file string = "data/conf.json"
+
 var (
 	locations []StaticPath
 
@@ -22,12 +26,11 @@ var (
 	servePort string
 	serveProt = "http" // default="http" unless `os.Args[1]` is "tls".
 	serveTLS  bool     // default=false unless `os.Args[1] == "tls"`
+	tlsKey    string
+	tlsCrt    string
 
 	indexRoot string // sub-path
 	indexPath string // basis for generated URLs for the indexer.
-
-	tlsKey string
-	tlsCrt string
 
 	pathEntry fsindex.PathEntry
 
@@ -51,22 +54,39 @@ var (
 	}
 )
 
+// Server info for JSON i/o.
+type Server struct {
+	Host string `json:"host"`
+	Port string `json:"port"`
+	TLS  bool   `json:"tls"` // default=false unless `os.Args[1] == "tls"` or specified in `[data/]config.json`.
+	Key  string `json:"key,omitempty"`
+	Crt  string `json:"crt,omitempty"`
+	Path string `json:"path"`
+}
+
 // StaticPath is a definition for directories we'll
 // allow into the app, preferably by way of JSON config.
 type StaticPath struct {
-	Source    string
-	Target    string
-	Browsable bool
+	Source    string `json:"src"`
+	Target    string `json:"tgt"`
+	Browsable bool   `json:"nav"`
 }
 
 // RootConfig is used to tell the server what files are to
 // be served in the root directory.
 type RootConfig struct {
-	Path         string
-	Directory    string
-	Files        []string
-	AliasDefault []string
-	Default      string
+	Path         string   `json:"path"`
+	Directory    string   `json:"dir"`
+	Files        []string `json:"files"`
+	AliasDefault []string `json:"alias"`
+	Default      string   `json:"default"`
+}
+
+// ConfigFile is for JSON i/o.
+type ConfigFile struct {
+	Server    Server       `json:"serv"`
+	Root      RootConfig   `json:"root"`
+	Locations []StaticPath `json:"stat"`
 }
 
 // SimpleModel collects our indexes
@@ -84,20 +104,37 @@ func (m *SimpleModel) create() {
 	m.PathSHA1 = make(map[string]*fsindex.PathEntry)
 }
 
-func iif(condition bool, onTrue string, onFalse string) string {
-	if condition == true {
-		return onTrue
+func writeConfig(cfg *ConfigFile) error {
+
+	if JSON, E := json.Marshal(cfg); E == nil {
+		ioutil.WriteFile("data/conf.json", JSON, 0777)
+		return nil
+	} else {
+		println(E)
+		return E
 	}
-	return onFalse
+}
+func readConfig(path string) (ConfigFile, error) {
+
+	var cfg ConfigFile
+	if E := json.Unmarshal([]byte(util.CacheFile(path)), &cfg); E == nil {
+		return cfg, E
+	}
+	return cfg, nil
+}
+
+func refreshConfig(tls string, port string, host string, path string) {
+	serveProt, servePort, serveHost, indexRoot = tls, port, host, path
+	indexPath = fmt.Sprintf(`%s://%s%s/%s`, serveProt, serveHost, servePort, indexRoot)
 }
 
 // FIXME: `pathIndex[0]` is used (solely).
 func configure(pathIndex ...string) {
 
 	serveTLS = len(os.Args) == 2 && os.Args[1] == "tls"
-	serveProt, servePort, serveHost, indexRoot = iif(serveTLS, "https", "http"), ":5500", "tfw.io", "v"
-	indexPath = fmt.Sprintf(`%s://%s%s/%s`, serveProt, serveHost, servePort, indexRoot)
+	refreshConfig(util.IIF(serveTLS, "https", "http"), ":5500", "tfw.io", "v")
 
+	// cfg = nil
 	println("- path for indexed files: ", indexPath)
 
 	rootConfig = RootConfig{
@@ -107,9 +144,6 @@ func configure(pathIndex ...string) {
 		Default:      "index.html",
 		AliasDefault: []string{"home", "index.htm", "index.html", "index", "default", "default.htm"},
 	}
-
-	tlsCrt, tlsKey = "data\\ia.crt", "data\\ia.key"
-
 	locations = []StaticPath{
 		StaticPath{
 			Source:    "public\\images",
@@ -126,6 +160,40 @@ func configure(pathIndex ...string) {
 			Target:    "/v/",
 			Browsable: true,
 		},
+	}
+
+	tlsCrt, tlsKey = "data\\ia.crt", "data\\ia.key"
+
+	// config template
+	cfg := ConfigFile{
+		Server: Server{
+			Host: "tfw.io",
+			Port: ":5500",
+			TLS:  len(os.Args) == 2 && os.Args[1] == "tls",
+			Crt:  util.IIF(util.FileExists(tlsCrt), tlsCrt, ""),
+			Key:  util.IIF(util.FileExists(tlsKey), tlsKey, ""),
+			Path: "v",
+		},
+		Root:      rootConfig,
+		Locations: locations,
+	}
+
+	if !util.FileExists(config_file) {
+		if !util.DirectoryExists("./data") {
+			os.Mkdir("data", 0777)
+		}
+		if E := writeConfig(&cfg); E != nil {
+			panic(fmt.Sprintf("Error: writing configuration. %s", E))
+		} else {
+			panic("- wrote default data/conf.json\n  for your editing.")
+		}
+	} else {
+		if conf, R := readConfig(config_file); R == nil {
+			cfg = conf
+			println("- got data/conf.json")
+		} else {
+			panic(fmt.Sprintf("Error: reading configuration. %s", R))
+		}
 	}
 
 	pathEntry = fsindex.PathEntry{
