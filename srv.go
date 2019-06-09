@@ -107,7 +107,7 @@ func configure(pathIndex ...string) {
 		Directory:    ".\\public",
 		Files:        []string{`json.json`, `bundle.js`, `favicon.ico`},
 		Default:      "index.html",
-		AliasDefault: []string{"index.htm", "index.html", "index"},
+		AliasDefault: []string{"home", "index.htm", "index.html", "index", "default", "default.htm"},
 	}
 
 	tlsCrt = "data\\ia.crt"
