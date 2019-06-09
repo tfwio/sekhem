@@ -17,10 +17,29 @@ const (
 	resErrorCacheFile = "- error: cache file [%s]\n"
 )
 
-// FileExists checks if a given path or file exists.
-// I don't believe this is aware if this is a file or not.
-func FileExists(pFilePath string) bool {
+// PathExists checks if a given File or Directory exists.
+func PathExists(pFilePath string) bool {
 	if _, err := os.Stat(pFilePath); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+// FileExists checks if a given path or file exists.
+func FileExists(pFilePath string) bool {
+	if F, E := os.Stat(pFilePath); os.IsNotExist(E) {
+		return false
+	} else if F.IsDir() {
+		return false
+	}
+	return true
+}
+
+// DirectoryExists checks if a given Directory exists.
+func DirectoryExists(pFilePath string) bool {
+	if F, E := os.Stat(pFilePath); os.IsNotExist(E) {
+		return false
+	} else if !F.IsDir() {
 		return false
 	}
 	return true
@@ -60,13 +79,22 @@ func Abs(pPath string) (dir string) {
 	return dir
 }
 
-// CacheFile Loads a local file in to string
+// CacheFile Loads a local file in to `string`
 func CacheFile(pFilePath string) string {
 	mop, err := ioutil.ReadFile(pFilePath)
 	if err != nil {
-		return fmt.Sprintf(resErrorCacheFile, pFilePath)
+		return string(mop)
 	}
-	return string(mop)
+	return fmt.Sprintf(resErrorCacheFile, pFilePath)
+}
+
+// CacheBytes Loads a local file in to `[]bytes`.
+func CacheBytes(pFilePath string) []byte {
+	mop, err := ioutil.ReadFile(pFilePath)
+	if err == nil {
+		return mop
+	}
+	return nil
 }
 
 // StrInt64 string to int helper
@@ -228,4 +256,12 @@ func CheckDateString(input string) string {
 		return input[:8]
 	}
 	return unknownString
+}
+
+// IIF returns a string depending on the boolean condition, onTrue or onFalse.
+func IIF(condition bool, onTrue string, onFalse string) string {
+	if condition == true {
+		return onTrue
+	}
+	return onFalse
 }
