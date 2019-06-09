@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+if [[ "x${1}" == "xmod" ]]; then
+    GO111MODULE=on
+    flags= -mod vendor
+else
+    flags=
+fi
+
+echo cleaning
+go clean -v
+
+echo building \`GO111MODULE=on go build -v${flags} srv.go\` \> srv.exe
+
+go build -v${flags} srv.go
+#  && echo running && ./$(basename $PWD)
