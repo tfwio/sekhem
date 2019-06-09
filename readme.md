@@ -15,73 +15,43 @@ Configuration
 You may setup as many paths as you like to be served however
 they must not conflict with one another!
 
-All of our configuration takes place in a configure function...
+All of our configuration takes place in a configuration file `./data/conf.json`...
 
-```go
-func configure(pathIndex ...string) {
+We're still missing some additional configuration elements which need
+to be hard-coded until this is resolved.
 
-	serveFiles = []string{`index.html`, `json.json`, `bundle.js`, `favicon.ico`}
-	serveTLS = len(os.Args) == 2 && os.Args[1] == "tls"
-	servePort = ":5500"
-	serveHost = "tfw.io"
-	servePath = "v"
-	serveProt := "http"
-
-	if serveTLS == true {
-		serveProt = "https"
-	}
-
-	faux := fmt.Sprintf(`%s://%s%s/%s`, serveProt, serveHost, servePort, servePath)
-	println("- path for indexed files: ", faux)
-
-	rootConfig = RootConfig{
-		Path:         "/",
-		Directory:    ".\\public",
-		Files:        []string{`json.json`, `bundle.js`, `favicon.ico`},
-		Default:      "index.html",
-		AliasDefault: []string{"home", "index.htm", "index.html", "index", "default", "default.htm"},
-	}
-
-	tlsCrt = "data\\ia.crt"
-	tlsKey = "data\\ia.key"
-
-	locations = []StaticPath{
-		StaticPath{
-			Source:    "public\\images",
-			Target:    "/images/",
-			Browsable: true,
-		},
-		StaticPath{
-			Source:    "public\\static",
-			Target:    "/static/",
-			Browsable: true,
-		},
-		StaticPath{
-			Source:    "C:\\Users\\tfwro\\Desktop\\DesktopMess\\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\\downloads",
-			Target:    "/v/",
-			Browsable: true,
-		},
-	}
-
-	pathEntry = fsindex.PathEntry{
-		PathSpec: fsindex.PathSpec{
-			FileEntry: fsindex.FileEntry{
-				Parent:   nil,
-				Name:     filepath.Base(pathIndex[0]),
-				FullPath: util.Abs(pathIndex[0]),
-				SHA1:     util.Sha1String(pathIndex[0]),
-			},
-			IsRoot: true},
-		FauxPath:    faux,
-		FileFilter:  []fsindex.FileSpec{localMedia, localMarkdown},
-		IgnorePaths: []string{},
-	}
+```json
+{
+    "serv": {
+        "host": "tfw.io",
+        "port": ":5500",
+        "tls": false,
+        "key": "data/ia.key",
+        "crt": "data/ia.crt",
+        "path": "v"
+    },
+    "root": {
+        "path": "/",
+        "dir": ".\\public",
+        "files": ["json.json", "bundle.js", "favicon.ico"],
+        "alias": ["home", "index.htm", "index.html", "index", "default", "default.htm"],
+        "default": "index.html"
+    },
+    "stat": [
+      {
+        "src": "public\\images",
+        "tgt": "/images/",
+        "nav": true
+      }, {
+        "src": "public\\static",
+        "tgt": "/static/",
+        "nav": true
+      }, {
+        "src": "[some directory with media files]",
+        "tgt": "/v/",
+        "nav": true
+      }
+    ]
 }
 ```
-
-Root
--------------
-
-The way this works is explicitly telling the server what files to serve in the root.
-For this we use something like: `[]string{"public\\index.html", "public\\bundle.js", "public\\bundle.js"}`
 
