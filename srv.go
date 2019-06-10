@@ -415,9 +415,9 @@ func cliInfo() {
 
 func initializeCli() {
 	mCli.Name = filepath.Base(os.Args[0])
-	mCli.Authors = []cli.Author{cli.Author{Name: "tfw, et alia" /*, Email: "tfwroble@gmail.com"}, cli.Author{Name: "Et al."*/}}
-	mCli.Version = "0.0.a"
-	mCli.Copyright = "2019 tfwio.github.com/go-fsindex — this software warrants no license.\n\tdisclaimer: use at own risk."
+	mCli.Authors = []cli.Author{cli.Author{Name: "tfw; et alia" /*, Email: "tfwroble@gmail.com"}, cli.Author{Name: "Et al."*/}}
+	mCli.Version = "v0.0.0"
+	mCli.Copyright = "tfwio.github.com/go-fsindex\n\n   This is free, open-source software.\n   disclaimer: use at own risk."
 	mCli.Action = func(*cli.Context) { initializeApp() }
 	mCli.Commands = []cli.Command{cli.Command{
 		Name:        "run",
