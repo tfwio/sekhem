@@ -65,131 +65,7 @@ func (p *PathEntry) Review(cbPath *CBPath, cbFile *CBFile) {
 // parameter `counter (*int32)`: pointer to our indexing integer (counter).
 // parameter `callback (RefreshAction)` is a method (if defined) which
 //                                      can be used arbitrarily.
-func (p *PathEntry) Refresh(rootPathEntry *PathEntry, counter *(int32), cbPath *CBPath, cbFile *CBFile) {
-
-	// create a reference node pointing to the tree-root
-	var mRoot *PathEntry
-
-	// if the first parent element is root, we need to build some
-	// reference memory (dictionary of ignore-paths).
-	if p.IsRoot {
-		mRoot = p
-		// build absolute path list to ignore.
-		for i := 0; i < len(p.IgnorePaths); i++ {
-			p.IgnorePaths[i], _ = filepath.Abs(p.IgnorePaths[i])
-		}
-	} else {
-		mRoot = rootPathEntry // assign mRoot
-	}
-
-	p.Index = *counter // Assign index
-	*counter++
-
-	if cbPath != nil {
-		if (*cbPath)(mRoot, p) {
-			return
-		}
-	}
-
-	mPaths, mError := filepath.Glob(fmt.Sprintf("%s/*", p.FullPath))
-	if mError != nil {
-		fmt.Println("error in path:", mError)
-		return
-	}
-
-	// FILE PATHS
-	for _, mFullPath := range mPaths {
-
-		fileinfo, err := os.Stat(mFullPath)
-		if os.IsNotExist(err) {
-			fmt.Println("Error reading file")
-			return
-		}
-
-		if !fileinfo.IsDir() {
-
-			for i := 0; i < len(mRoot.FileFilter); i++ {
-
-				if mRoot.FileFilter[i].Match(mFullPath) {
-
-					var child = FileEntry{
-						Parent:    p,
-						FullPath:  mFullPath,
-						SHA1:      util.Sha1String(mFullPath),
-						Name:      util.StripFileExtension(filepath.Base(mFullPath)),
-						Extension: filepath.Ext(mFullPath),
-					}
-					// Rooted only works once .FullPath is set.
-					child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(p)))
-					p.Files = append(p.Files, child)
-					if cbFile != nil {
-						if (*cbFile)(mRoot, &child) {
-							return
-						}
-						// println(fmt.Sprintf("  - %s", child.Base()))
-					}
-
-				}
-			}
-
-			// if !isMediaExclude(mPath.Name()) {
-			// indexMediaModelPaths(mPathAbs)
-			// }
-			// } else {
-			// 	mFileAbs, _ := filepath.Abs(filepath.Join(mAbs, mPath.Name()))
-			// 	if isMediaFile(mFileAbs) {
-			// 		MediaFiles = append(MediaFiles, mFileAbs)
-			// 	}
-			// }
-		}
-	}
-
-	// DIRECTORY PATHS
-	for _, mFullPath := range mPaths {
-
-		fileinfo, err := os.Stat(mFullPath)
-		if os.IsNotExist(err) {
-			fmt.Println("Error reading file")
-			return
-		}
-
-		if fileinfo.IsDir() {
-
-			var child = PathEntry{
-				PathSpec: PathSpec{
-					FileEntry: FileEntry{
-						Parent:    p,
-						FullPath:  mFullPath,
-						SHA1:      util.Sha1String(mFullPath),
-						Name:      util.StripFileExtension(filepath.Base(mFullPath)),
-						Extension: filepath.Ext(mFullPath),
-					},
-					IsRoot: false,
-				},
-			}
-			child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(p)))
-
-			if child.IsIgnore(mRoot) {
-
-				fmt.Printf("- ignored: %s\n", child.FullPath)
-
-			} else {
-
-				child.Refresh(mRoot, counter, cbPath, cbFile)
-
-				p.Paths = append(p.Paths, child)
-			}
-
-		}
-	}
-}
-
-// Refresh1 refreshes child directories and files.
-// parameter `rootPathEntry`: root-path entry.
-// parameter `counter (*int32)`: pointer to our indexing integer (counter).
-// parameter `callback (RefreshAction)` is a method (if defined) which
-//                                      can be used arbitrarily.
-func (p *PathEntry) Refresh1(rootPathEntry *PathEntry, counter *(int32), handler *Handlers) {
+func (p *PathEntry) Refresh(rootPathEntry *PathEntry, counter *(int32), handler *Handlers) {
 
 	// create a reference node pointing to the tree-root
 	var mRoot *PathEntry
@@ -243,6 +119,7 @@ func (p *PathEntry) Refresh1(rootPathEntry *PathEntry, counter *(int32), handler
 						SHA1:      util.Sha1String(mFullPath),
 						Name:      util.StripFileExtension(filepath.Base(mFullPath)),
 						Extension: filepath.Ext(mFullPath),
+						Mod:       fileinfo.ModTime(),
 					}
 					child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(p)))
 					p.Files = append(p.Files, child)
@@ -287,6 +164,7 @@ func (p *PathEntry) Refresh1(rootPathEntry *PathEntry, counter *(int32), handler
 						SHA1:      util.Sha1String(mFullPath),
 						Name:      util.StripFileExtension(filepath.Base(mFullPath)),
 						Extension: filepath.Ext(mFullPath),
+						Mod:       fileinfo.ModTime(),
 					},
 					IsRoot: false,
 				},
@@ -299,7 +177,7 @@ func (p *PathEntry) Refresh1(rootPathEntry *PathEntry, counter *(int32), handler
 
 			} else {
 
-				child.Refresh1(mRoot, counter, handler)
+				child.Refresh(mRoot, counter, handler)
 
 				p.Paths = append(p.Paths, child)
 			}

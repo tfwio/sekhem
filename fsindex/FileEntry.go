@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"tfw.io/Go/fsindex/util"
 )
@@ -16,6 +17,7 @@ type FileEntry struct {
 	SHA1      string     `json:"sha1,omitempty"`
 	Path      string     `json:"path,omitempty"`
 	Extension string     `json:"ext,omitempty"`
+	Mod       time.Time  `json:"mod"`
 }
 
 // Abs ...Get the absolute path of a given directory.

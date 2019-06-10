@@ -121,6 +121,7 @@ type ConfigFile struct {
 	Locations  []StaticPath       `json:"stat"`
 	Indexes    []IndexPath        `json:"indx,omitempty"`
 	Extensions []fsindex.FileSpec `json:"spec,omitempty"`
+	indexPath  string
 }
 
 func (c *ConfigFile) doTLS() bool {
@@ -128,6 +129,18 @@ func (c *ConfigFile) doTLS() bool {
 		return c.Server.hasCert() && c.Server.hasKey()
 	}
 	return c.Server.hasCert() && c.Server.hasKey() && c.Server.TLS
+}
+
+func (c *ConfigFile) defaultFile() string {
+	return util.Abs(util.Cat(c.Root.Directory, "\\", c.Root.Default))
+}
+
+func (c *ConfigFile) getBasePath() string {
+	return fmt.Sprintf(`%s://%s%s`, util.IIF(c.Server.TLS, "https", "http"), c.Server.Host, c.Server.Port)
+}
+
+func (c *ConfigFile) getPath(more ...string) string {
+	return util.Cat(c.getBasePath(), "/", strings.Join(more, "/"))
 }
 
 func (c *ConfigFile) initializeDefaults() {
@@ -181,6 +194,7 @@ func (c *ConfigFile) initializeDefaults() {
 		},
 	}
 	// c.configInfo()
+	c.indexPath = c.getPath(c.Server.Path)
 }
 
 func (c *ConfigFile) getFilter(extensions []string) []fsindex.FileSpec {
@@ -273,7 +287,7 @@ func configure(pathIndex ...string) {
 	indexPath = fmt.Sprintf(`%s/%s`, serverRoot, "v")
 
 	loadConfig() // loads (or creates conf.json and terminates application)
-	indexPath = fmt.Sprintf(`%s://%s%s/%s`, util.IIF(configuration.Server.TLS, "https", "http"), configuration.Server.Port, configuration.Server.Host, configuration.Server.Path)
+	indexPath = fmt.Sprintf(`%s://%s%s/%s`, util.IIF(configuration.Server.TLS, "https", "http"), configuration.Server.Host, configuration.Server.Port, configuration.Server.Path)
 
 	// TODO: remove this
 	println("- path for indexed files: ", indexPath)
@@ -363,7 +377,7 @@ func (m *SimpleModel) AddFile(p *fsindex.PathEntry, c *fsindex.FileEntry) {
 	m.FileSHA1[c.SHA1] = c
 }
 
-func loadModel() {
+func createIndex() {
 
 	xCounter, fCounter = 0, 0
 
@@ -386,7 +400,7 @@ func loadModel() {
 			return false
 		},
 	}
-	pathEntry.Refresh1(nil, &xCounter, &handler)
+	pathEntry.Refresh(nil, &xCounter, &handler)
 
 	checkSimpleModel(&mdl)
 }
@@ -407,10 +421,6 @@ func checkSimpleModel(mdl *SimpleModel) {
 	for _, x := range ref1.Parent.Files {
 		println("  -->", x.Path)
 	}
-}
-
-// not used
-func cliInfo() {
 }
 
 func initializeCli() {
@@ -458,34 +468,35 @@ func initializeApp() {
 	// they are the only files we're serving specifically in
 	// that directory.
 
-	// FIXME: what?
 	defaultFile := util.Abs(util.Cat(configuration.Root.Directory, "\\", configuration.Root.Default))
 	// configuration.configInfo()
 
-	println("==> server setup: configuration.Root.AliasDefault")
+	// println("==> server setup: configuration.Root.AliasDefault")
+	println("alias-default")
 	for _, rootEntry := range configuration.Root.AliasDefault {
-		fmt.Printf("  > Target = %s\n", rootEntry)
 		target := util.Cat(configuration.Root.Path, rootEntry)
 		mGin.StaticFile(target, defaultFile)
+		fmt.Printf("  ? Target = %s, Source = %s\n", target, configuration.defaultFile())
 	}
+	println("root-files")
 	for _, rootEntry := range configuration.Root.Files {
 		target := util.Cat(configuration.Root.Path, rootEntry)
 		source := util.Abs(util.Cat(configuration.Root.Directory, "\\", rootEntry))
-		fmt.Printf("- serving file: \"%s\" from \"%s\"\n", target, source)
 		mGin.StaticFile(target, source)
+		fmt.Printf("  > Target = %s, Source = %s\n", target, source)
 	}
+	println("locations")
 	for _, tgt := range configuration.Locations {
 		println("- serving path:", tgt.Target, "from", util.Abs(tgt.Source))
 		mGin.StaticFS(tgt.Target, gin.Dir(util.Abs(tgt.Source), tgt.Browsable))
+		fmt.Printf("  > Target = %s, Source = %s\n", tgt.Target, tgt.Source)
 	}
-	fmt.Printf("- default: \"%s\" from \"%s\"\n", configuration.Root.Path, defaultFile)
+	fmt.Printf("- default: Target = %s, Source =  %s\n", configuration.Root.Path, defaultFile)
 	mGin.StaticFile(constRootPathDefault, defaultFile)
 
 	mGin.GET("/json/", serveJSONPathEntry)
 
-	loadModel()
-
-	println("running")
+	createIndex()
 
 	if configuration.doTLS() {
 		println("- use tls")
