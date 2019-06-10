@@ -11,8 +11,8 @@ import (
 
 // FileSpec structure.
 type FileSpec struct {
-	Name       string   `json:"-"`
-	Extensions []string `json:"-"`
+	Name       string   `json:"name"`
+	Extensions []string `json:"ext"`
 }
 
 // Match checks to see if an input file extention matches
