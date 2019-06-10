@@ -10,8 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/urfave/cli"
 
-	"tfw.io/Go/fsindex/config"
 	"tfw.io/Go/fsindex/fsindex"
+	"tfw.io/Go/fsindex/fsindex/config"
 	"tfw.io/Go/fsindex/util"
 )
 
