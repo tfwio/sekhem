@@ -10,17 +10,75 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/urfave/cli"
 
 	"tfw.io/Go/fsindex/fsindex"
 	"tfw.io/Go/fsindex/util"
 )
 
-const config_file string = "data/conf.json"
+// Configuration variables
 
 var (
-	locations []StaticPath
-
+	configFilePath = "data/conf.json"
+	localMedia     = fsindex.FileSpec{
+		Name:       "Media (images)",
+		Extensions: []string{".mp4", ".m4a", ".mp3"},
+	}
+	localMarkdown = fsindex.FileSpec{
+		Name:       "Markdown (hyper-text)",
+		Extensions: []string{".md", ".mmd"},
+	}
+	// config template
+	configuration = ConfigFile{
+		Server: Server{
+			Host: "tfw.io",
+			Port: ":5500",
+			TLS:  len(os.Args) == 2 && os.Args[1] == "tls",
+			Crt:  util.IIF(util.FileExists(tlsCrt), tlsCrt, ""),
+			Key:  util.IIF(util.FileExists(tlsKey), tlsKey, ""),
+			Path: "v",
+		},
+		Root: RootConfig{
+			Path:         "/",
+			Directory:    ".\\public",
+			Files:        []string{`json.json`, `bundle.js`, `favicon.ico`},
+			Default:      "index.html",
+			AliasDefault: []string{"home", "index.htm", "index.html", "index", "default", "default.htm"},
+		},
+		Locations: []StaticPath{
+			StaticPath{
+				Source:    "public\\images",
+				Target:    "/images/",
+				Browsable: true,
+			},
+			StaticPath{
+				Source:    "public\\static",
+				Target:    "/static/",
+				Browsable: true,
+			},
+			// FIXME: this particular path is to be associated with indexing.
+			StaticPath{
+				Source:    "C:\\Users\\tfwro\\Desktop\\DesktopMess\\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\\downloads",
+				Target:    "/v/",
+				Browsable: true,
+			},
+		},
+		Extensions: []fsindex.FileSpec{
+			fsindex.FileSpec{
+				Name:       "Media",
+				Extensions: []string{".mp4", ".m4a", ".mp3"},
+			},
+			fsindex.FileSpec{
+				Name:       "Markdown",
+				Extensions: []string{".md", ".mmd"},
+			},
+		},
+	}
+	locations  []StaticPath
 	rootConfig RootConfig
+)
+var (
+	mCli cli.App
 
 	serveHost string
 	servePort string
@@ -34,24 +92,9 @@ var (
 
 	pathEntry fsindex.PathEntry
 
-	xCounter   int32
-	fCounter   int32
-	xpCounter  *int32
-	localMedia = fsindex.FileSpec{
-		Name: "Media (images)",
-		Extensions: []string{
-			".mp4",
-			".m4a", // do these work on iphones/tablets? probably no.
-			".mp3",
-		},
-	}
-	localMarkdown = fsindex.FileSpec{
-		Name: "Markdown (hyper-text)",
-		Extensions: []string{
-			".md",
-			".mmd",
-		},
-	}
+	xCounter  int32
+	fCounter  int32
+	xpCounter *int32
 )
 
 // Server info for JSON i/o.
@@ -69,7 +112,17 @@ type Server struct {
 type StaticPath struct {
 	Source    string `json:"src"`
 	Target    string `json:"tgt"`
-	Browsable bool   `json:"nav"`
+	Browsable bool   `json:"nav"` // show directory file-listing in browser
+}
+
+// IndexPath — same as StaticPath, however we can call on something like
+// `[target].json` to calculate/generate a file-index listing.
+type IndexPath struct {
+	Source      string   `json:"src"`
+	Target      string   `json:"tgt"`
+	Browsable   bool     `json:"nav"`            // show directory file-listing in browser
+	IgnorePaths []string `json:"ignore-paths"`   // absolute paths to ignore
+	Extensions  []string `json:"spec,omitempty"` // file extensions to recognize; I.E.: the `ConfigFile.Extensions` .Name.
 }
 
 // RootConfig is used to tell the server what files are to
@@ -84,9 +137,11 @@ type RootConfig struct {
 
 // ConfigFile is for JSON i/o.
 type ConfigFile struct {
-	Server    Server       `json:"serv"`
-	Root      RootConfig   `json:"root"`
-	Locations []StaticPath `json:"stat"`
+	Server     Server             `json:"serv"`
+	Root       RootConfig         `json:"root"`
+	Locations  []StaticPath       `json:"stat"`
+	Indexes    []IndexPath        `json:"indx,omitempty"`
+	Extensions []fsindex.FileSpec `json:"spec,omitempty"`
 }
 
 // SimpleModel collects our indexes
@@ -105,7 +160,6 @@ func (m *SimpleModel) create() {
 }
 
 func writeConfig(cfg *ConfigFile) error {
-
 	if JSON, E := json.Marshal(cfg); E == nil {
 		ioutil.WriteFile("data/conf.json", JSON, 0777)
 		return nil
@@ -134,62 +188,22 @@ func configure(pathIndex ...string) {
 	serveTLS = len(os.Args) == 2 && os.Args[1] == "tls"
 	refreshConfig(util.IIF(serveTLS, "https", "http"), ":5500", "tfw.io", "v")
 
-	// cfg = nil
 	println("- path for indexed files: ", indexPath)
-
-	rootConfig = RootConfig{
-		Path:         "/",
-		Directory:    ".\\public",
-		Files:        []string{`json.json`, `bundle.js`, `favicon.ico`},
-		Default:      "index.html",
-		AliasDefault: []string{"home", "index.htm", "index.html", "index", "default", "default.htm"},
-	}
-	locations = []StaticPath{
-		StaticPath{
-			Source:    "public\\images",
-			Target:    "/images/",
-			Browsable: true,
-		},
-		StaticPath{
-			Source:    "public\\static",
-			Target:    "/static/",
-			Browsable: true,
-		},
-		StaticPath{
-			Source:    "C:\\Users\\tfwro\\Desktop\\DesktopMess\\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\\downloads",
-			Target:    "/v/",
-			Browsable: true,
-		},
-	}
 
 	tlsCrt, tlsKey = "data\\ia.crt", "data\\ia.key"
 
-	// config template
-	cfg := ConfigFile{
-		Server: Server{
-			Host: "tfw.io",
-			Port: ":5500",
-			TLS:  len(os.Args) == 2 && os.Args[1] == "tls",
-			Crt:  util.IIF(util.FileExists(tlsCrt), tlsCrt, ""),
-			Key:  util.IIF(util.FileExists(tlsKey), tlsKey, ""),
-			Path: "v",
-		},
-		Root:      rootConfig,
-		Locations: locations,
-	}
-
-	if !util.FileExists(config_file) {
+	if !util.FileExists(configFilePath) {
 		if !util.DirectoryExists("./data") {
 			os.Mkdir("data", 0777)
 		}
-		if E := writeConfig(&cfg); E != nil {
+		if E := writeConfig(&configuration); E != nil {
 			panic(fmt.Sprintf("Error: writing configuration. %s", E))
 		} else {
 			panic("- wrote default data/conf.json\n  for your editing.")
 		}
 	} else {
-		if conf, R := readConfig(config_file); R == nil {
-			cfg = conf
+		if conf, R := readConfig(configFilePath); R == nil {
+			configuration = conf
 			println("- got data/conf.json")
 		} else {
 			panic(fmt.Sprintf("Error: reading configuration. %s", R))
@@ -212,53 +226,7 @@ func configure(pathIndex ...string) {
 }
 
 func main() {
-
-	gin.SetMode(gin.ReleaseMode)
-
-	configure(`C:\Users\tfwro\Desktop\DesktopMess\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\downloads`)
-
-	mGin := gin.Default()
-
-	// these files are all stored in the public directory.
-	// they are the only files we're serving specifically in
-	// that directory.
-
-	defaultFile := util.Abs(util.Cat(rootConfig.Directory, "\\", rootConfig.Default))
-	for _, rootEntry := range rootConfig.AliasDefault {
-		target := util.Cat(rootConfig.Path, rootEntry)
-		fmt.Printf("- default alias: \"%s\" from \"%s\"\n", target, defaultFile)
-		mGin.StaticFile(target, defaultFile)
-	}
-	for _, rootEntry := range rootConfig.Files {
-		target := util.Cat(rootConfig.Path, rootEntry)
-		source := util.Abs(util.Cat(rootConfig.Directory, "\\", rootEntry))
-		fmt.Printf("- serving file: \"%s\" from \"%s\"\n", target, source)
-		mGin.StaticFile(target, source)
-	}
-	for _, tgt := range locations {
-		println("- serving path:", tgt.Target, "from", util.Abs(tgt.Source))
-		mGin.StaticFS(tgt.Target, gin.Dir(util.Abs(tgt.Source), tgt.Browsable))
-	}
-	fmt.Printf("- default: \"%s\" from \"%s\"\n", rootConfig.Path, defaultFile)
-	mGin.StaticFile("/", defaultFile)
-
-	mGin.GET("/json/", serveJSONPathEntry)
-
-	loadModel()
-
-	println("running")
-
-	if len(os.Args) == 2 && os.Args[1] == "tls" {
-		println("- Using TLS")
-		if err := mGin.RunTLS(servePort, tlsCrt, tlsKey); err != nil {
-			fmt.Println("router error:", err)
-		}
-	} else {
-		println("- Not using TLS")
-		if err := mGin.Run(servePort); err != nil {
-			fmt.Println("router error:", err)
-		}
-	}
+	initializeCli()
 }
 
 func serveJSONPathEntry(pContext *gin.Context) {
@@ -344,5 +312,87 @@ func checkSimpleModel(mdl *SimpleModel) {
 	fmt.Printf("looking in \"%s\" for files...\n", ref1.Parent.Base())
 	for _, x := range ref1.Parent.Files {
 		println("  -->", x.Path)
+	}
+}
+
+// not used
+func cliInfo() {
+	mCli.Name = "fsindex - indexer and simple utility web-server."
+	mCli.UsageText = `this guy is primarily for use with NPM, React Webpack.`
+	mCli.Authors = []cli.Author{cli.Author{Name: "tfw, et alia" /*, Email: "tfwroble@gmail.com"}, cli.Author{Name: "Et al."*/}}
+	mCli.Description = `A simple little prototyping web-server.`
+	mCli.Version = "0.0.0.A"
+	mCli.Copyright = "2019 tfwio.github.com/go-fsindex"
+}
+
+func initializeCli() {
+	mCli.Commands = []cli.Command{cli.Command{
+		Name:    "run",
+		Action:  func(*cli.Context) { initializeApp() },
+		Usage:   "Deault operation — run the server.",
+		Aliases: []string{"go"},
+		Hidden:  true,
+	}}
+	mCli.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:        "conf",
+			Value:       "data/conf.json",
+			Destination: &configFilePath,
+		},
+	}
+	if len(os.Args) == 1 {
+		mCli.Run([]string{os.Args[0], "run"})
+	} else {
+		mCli.Run(os.Args)
+	}
+}
+
+func initializeApp() {
+
+	gin.SetMode(gin.ReleaseMode)
+	// should be using
+	configure(`C:\Users\tfwro\Desktop\DesktopMess\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\downloads`)
+
+	mGin := gin.Default()
+
+	// these files are all stored in the public directory.
+	// they are the only files we're serving specifically in
+	// that directory.
+
+	defaultFile := util.Abs(util.Cat(rootConfig.Directory, "\\", rootConfig.Default))
+	for _, rootEntry := range rootConfig.AliasDefault {
+		target := util.Cat(rootConfig.Path, rootEntry)
+		fmt.Printf("- default alias: \"%s\" from \"%s\"\n", target, defaultFile)
+		mGin.StaticFile(target, defaultFile)
+	}
+	for _, rootEntry := range rootConfig.Files {
+		target := util.Cat(rootConfig.Path, rootEntry)
+		source := util.Abs(util.Cat(rootConfig.Directory, "\\", rootEntry))
+		fmt.Printf("- serving file: \"%s\" from \"%s\"\n", target, source)
+		mGin.StaticFile(target, source)
+	}
+	for _, tgt := range locations {
+		println("- serving path:", tgt.Target, "from", util.Abs(tgt.Source))
+		mGin.StaticFS(tgt.Target, gin.Dir(util.Abs(tgt.Source), tgt.Browsable))
+	}
+	fmt.Printf("- default: \"%s\" from \"%s\"\n", rootConfig.Path, defaultFile)
+	mGin.StaticFile("/", defaultFile)
+
+	mGin.GET("/json/", serveJSONPathEntry)
+
+	loadModel()
+
+	println("running")
+
+	if len(os.Args) == 2 && os.Args[1] == "tls" {
+		println("- Using TLS")
+		if err := mGin.RunTLS(servePort, tlsCrt, tlsKey); err != nil {
+			fmt.Println("router error:", err)
+		}
+	} else {
+		println("- Not using TLS")
+		if err := mGin.Run(servePort); err != nil {
+			fmt.Println("router error:", err)
+		}
 	}
 }
