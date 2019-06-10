@@ -10,11 +10,12 @@ import (
 
 // FileEntry ...
 type FileEntry struct {
-	Parent   *PathEntry `json:"-"`              // Parent directory
-	Name     string     `json:"name,omitempty"` //
-	FullPath string     `json:"-"`              // Complete directory path
-	SHA1     string     `json:"sha1,omitempty"`
-	Path     string     `json:"path,omitempty"`
+	Parent    *PathEntry `json:"-"`              // Parent directory
+	Name      string     `json:"name,omitempty"` //
+	FullPath  string     `json:"-"`              // Complete directory path
+	SHA1      string     `json:"sha1,omitempty"`
+	Path      string     `json:"path,omitempty"`
+	Extension string     `json:"ext,omitempty"`
 }
 
 // Abs ...Get the absolute path of a given directory.

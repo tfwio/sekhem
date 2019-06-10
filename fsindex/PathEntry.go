@@ -113,9 +113,11 @@ func (p *PathEntry) Refresh(rootPathEntry *PathEntry, counter *(int32), cbPath *
 				if mRoot.FileFilter[i].Match(mFullPath) {
 
 					var child = FileEntry{
-						Parent:   p,
-						FullPath: mFullPath,
-						SHA1:     util.Sha1String(mFullPath),
+						Parent:    p,
+						FullPath:  mFullPath,
+						SHA1:      util.Sha1String(mFullPath),
+						Name:      util.StripFileExtension(filepath.Base(mFullPath)),
+						Extension: filepath.Ext(mFullPath),
 					}
 					// Rooted only works once .FullPath is set.
 					child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(p)))
@@ -156,9 +158,11 @@ func (p *PathEntry) Refresh(rootPathEntry *PathEntry, counter *(int32), cbPath *
 			var child = PathEntry{
 				PathSpec: PathSpec{
 					FileEntry: FileEntry{
-						Parent:   p,
-						FullPath: mFullPath,
-						SHA1:     util.Sha1String(mFullPath),
+						Parent:    p,
+						FullPath:  mFullPath,
+						SHA1:      util.Sha1String(mFullPath),
+						Name:      util.StripFileExtension(filepath.Base(mFullPath)),
+						Extension: filepath.Ext(mFullPath),
 					},
 					IsRoot: false,
 				},
@@ -234,10 +238,11 @@ func (p *PathEntry) Refresh1(rootPathEntry *PathEntry, counter *(int32), handler
 				if mRoot.FileFilter[i].Match(mFullPath) {
 
 					var child = FileEntry{
-						Parent:   p,
-						FullPath: mFullPath,
-						SHA1:     util.Sha1String(mFullPath),
-						Name:     filepath.Base(mFullPath),
+						Parent:    p,
+						FullPath:  mFullPath,
+						SHA1:      util.Sha1String(mFullPath),
+						Name:      util.StripFileExtension(filepath.Base(mFullPath)),
+						Extension: filepath.Ext(mFullPath),
 					}
 					child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(p)))
 					p.Files = append(p.Files, child)
@@ -277,10 +282,11 @@ func (p *PathEntry) Refresh1(rootPathEntry *PathEntry, counter *(int32), handler
 			var child = PathEntry{
 				PathSpec: PathSpec{
 					FileEntry: FileEntry{
-						Parent:   p,
-						FullPath: mFullPath,
-						SHA1:     util.Sha1String(mFullPath),
-						Name:     filepath.Base(mFullPath),
+						Parent:    p,
+						FullPath:  mFullPath,
+						SHA1:      util.Sha1String(mFullPath),
+						Name:      util.StripFileExtension(filepath.Base(mFullPath)),
+						Extension: filepath.Ext(mFullPath),
 					},
 					IsRoot: false,
 				},
