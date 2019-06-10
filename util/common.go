@@ -18,16 +18,16 @@ const (
 )
 
 // PathExists checks if a given File or Directory exists.
-func PathExists(pFilePath string) bool {
-	if _, err := os.Stat(pFilePath); os.IsNotExist(err) {
+func PathExists(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false
 	}
 	return true
 }
 
 // FileExists checks if a given path or file exists.
-func FileExists(pFilePath string) bool {
-	if F, E := os.Stat(pFilePath); os.IsNotExist(E) {
+func FileExists(path string) bool {
+	if F, E := os.Stat(path); os.IsNotExist(E) {
 		return false
 	} else if F.IsDir() {
 		return false
@@ -36,8 +36,8 @@ func FileExists(pFilePath string) bool {
 }
 
 // DirectoryExists checks if a given Directory exists.
-func DirectoryExists(pFilePath string) bool {
-	if F, E := os.Stat(pFilePath); os.IsNotExist(E) {
+func DirectoryExists(path string) bool {
+	if F, E := os.Stat(path); os.IsNotExist(E) {
 		return false
 	} else if !F.IsDir() {
 		return false
@@ -47,12 +47,12 @@ func DirectoryExists(pFilePath string) bool {
 
 // Touch will create a file if it does not exist returns success.
 // Bare in mind if the file exists before calling, then this will return false.
-func Touch(pFilePath string) bool {
+func Touch(path string) bool {
 
-	if FileExists(pFilePath) {
+	if FileExists(path) {
 		return false
 	}
-	var file, err = os.Create(pFilePath)
+	var file, err = os.Create(path)
 	defer file.Close()
 	if err != nil {
 		return false
@@ -63,34 +63,40 @@ func Touch(pFilePath string) bool {
 // GetDirectory expects a file as input and returns
 // its parent directory.
 // if input is a directory, I'm wondering what happens.
-func GetDirectory(pFilePath string) (string, error) {
-	dir, err := filepath.Abs(filepath.Dir(pFilePath))
+func GetDirectory(path string) (string, error) {
+	dir, err := filepath.Abs(filepath.Dir(path))
 	return dir, err
 }
 
 // StripFileExtension ...yep.
-func StripFileExtension(pFilePath string) string {
-	return strings.Replace(pFilePath, filepath.Ext(pFilePath), "", -1)
+func StripFileExtension(path string) string {
+	return strings.Replace(path, filepath.Ext(path), "", -1)
 }
 
 // Abs returns an absolute representation of path; Ignores errors.
-func Abs(pPath string) (dir string) {
-	dir, _ = filepath.Abs(pPath)
+func Abs(path string) (dir string) {
+	dir, _ = filepath.Abs(path)
+	return dir
+}
+
+// AbsBase returns `filepath.Base(path)` after converting to absolute representation of path; Ignores errors.
+func AbsBase(path string) (dir string) {
+	dir, _ = filepath.Abs(path)
 	return dir
 }
 
 // CacheFile Loads a local file in to `string`
-func CacheFile(pFilePath string) string {
-	mop, err := ioutil.ReadFile(pFilePath)
+func CacheFile(path string) string {
+	mop, err := ioutil.ReadFile(path)
 	if err != nil {
 		return string(mop)
 	}
-	return fmt.Sprintf(resErrorCacheFile, pFilePath)
+	return fmt.Sprintf(resErrorCacheFile, path)
 }
 
 // CacheBytes Loads a local file in to `[]bytes`.
-func CacheBytes(pFilePath string) []byte {
-	mop, err := ioutil.ReadFile(pFilePath)
+func CacheBytes(path string) []byte {
+	mop, err := ioutil.ReadFile(path)
 	if err == nil {
 		return mop
 	}
