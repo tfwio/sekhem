@@ -81,8 +81,7 @@ func Abs(path string) (dir string) {
 
 // AbsBase returns `filepath.Base(path)` after converting to absolute representation of path; Ignores errors.
 func AbsBase(path string) (dir string) {
-	dir, _ = filepath.Abs(path)
-	return dir
+	return filepath.Base(Abs(path))
 }
 
 // CacheFile Loads a local file in to `string`
