@@ -19,78 +19,19 @@ import (
 // Configuration variables
 
 var (
-	configFilePath = "data/conf.json"
-	localMedia     = fsindex.FileSpec{
-		Name:       "Media (images)",
-		Extensions: []string{".mp4", ".m4a", ".mp3"},
-	}
-	localMarkdown = fsindex.FileSpec{
-		Name:       "Markdown (hyper-text)",
-		Extensions: []string{".md", ".mmd"},
-	}
-	// config template
-	configuration = ConfigFile{
-		Server: Server{
-			Host: "tfw.io",
-			Port: ":5500",
-			TLS:  len(os.Args) == 2 && os.Args[1] == "tls",
-			Crt:  util.IIF(util.FileExists(tlsCrt), tlsCrt, ""),
-			Key:  util.IIF(util.FileExists(tlsKey), tlsKey, ""),
-			Path: "v",
-		},
-		Root: RootConfig{
-			Path:         "/",
-			Directory:    ".\\public",
-			Files:        []string{`json.json`, `bundle.js`, `favicon.ico`},
-			Default:      "index.html",
-			AliasDefault: []string{"home", "index.htm", "index.html", "index", "default", "default.htm"},
-		},
-		Locations: []StaticPath{
-			StaticPath{
-				Source:    "public\\images",
-				Target:    "/images/",
-				Browsable: true,
-			},
-			StaticPath{
-				Source:    "public\\static",
-				Target:    "/static/",
-				Browsable: true,
-			},
-			// FIXME: this particular path is to be associated with indexing.
-			StaticPath{
-				Source:    "C:\\Users\\tfwro\\Desktop\\DesktopMess\\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\\downloads",
-				Target:    "/v/",
-				Browsable: true,
-			},
-		},
-		Extensions: []fsindex.FileSpec{
-			fsindex.FileSpec{
-				Name:       "Media",
-				Extensions: []string{".mp4", ".m4a", ".mp3"},
-			},
-			fsindex.FileSpec{
-				Name:       "Markdown",
-				Extensions: []string{".md", ".mmd"},
-			},
-		},
-	}
-	locations  []StaticPath
-	rootConfig RootConfig
+	defaultConfigFile = "data/conf.json"
+	useTLS            = false
+	configuration     ConfigFile
+	extMap            map[string]*fsindex.FileSpec
 )
 var (
 	mCli cli.App
 
-	serveHost string
-	servePort string
-	serveProt = "http" // default="http" unless `os.Args[1]` is "tls".
-	serveTLS  bool     // default=false unless `os.Args[1] == "tls"`
-	tlsKey    string
-	tlsCrt    string
+	serverRoot string // e.g. https://tfw.io:5500
+	indexPath  string // e.g. https://tfw.io:5500/[path] (or <serverRoot>/<path>)
 
-	indexRoot string // sub-path
-	indexPath string // basis for generated URLs for the indexer.
-
-	pathEntry fsindex.PathEntry
+	pathEntry   fsindex.PathEntry
+	pathEntries []fsindex.PathEntry
 
 	xCounter  int32
 	fCounter  int32
@@ -107,22 +48,51 @@ type Server struct {
 	Path string `json:"path"`
 }
 
+func (s *Server) info() {
+	println("> Server")
+	println(fmt.Sprintf("--> Host = %s", s.Host))
+	println(fmt.Sprintf("--> Port = %s", s.Port))
+	println(fmt.Sprintf("--> TLS  = %v", s.TLS))
+	println(fmt.Sprintf("--> Key  = %s", s.Key))
+	println(fmt.Sprintf("--> Crt  = %s", s.Crt))
+	println(fmt.Sprintf("--> Path  = %s", s.Path))
+}
+func (s *Server) hasKey() bool {
+	return util.FileExists(constServerTLSKeyDefault)
+}
+func (s *Server) hasCert() bool {
+	return util.FileExists(constServerTLSCertDefault)
+}
+
+func (s *Server) initServerConfig() {
+	s.Host = constServerDefaultHost
+	s.Port = constServerDefaultPort
+	s.TLS = len(os.Args) == 2 && os.Args[1] == "tls"
+	s.Crt = constServerTLSCertDefault
+	s.Key = constServerTLSKeyDefault
+	s.Path = "v"
+}
+
 // StaticPath is a definition for directories we'll
 // allow into the app, preferably by way of JSON config.
 type StaticPath struct {
-	Source    string `json:"src"`
-	Target    string `json:"tgt"`
-	Browsable bool   `json:"nav"` // show directory file-listing in browser
+	Source string `json:"src"`
+	Target string `json:"tgt"`
+	// show directory file-listing in browser
+	Browsable bool `json:"nav"`
 }
 
 // IndexPath — same as StaticPath, however we can call on something like
 // `[target].json` to calculate/generate a file-index listing.
 type IndexPath struct {
+	Alias       string   `json:"alias,omitempty"` // this isn't supported really, but the idea is to use this as the name of our target as opposed to our root-directory name, or default server path (in Server.Path).
 	Source      string   `json:"src"`
 	Target      string   `json:"tgt"`
-	Browsable   bool     `json:"nav"`            // show directory file-listing in browser
-	IgnorePaths []string `json:"ignore-paths"`   // absolute paths to ignore
-	Extensions  []string `json:"spec,omitempty"` // file extensions to recognize; I.E.: the `ConfigFile.Extensions` .Name.
+	Browsable   bool     `json:"nav"` // show directory file-listing in browser
+	Servable    bool     `json:"serve"`
+	IgnorePaths []string `json:"ignorePaths"` // absolute paths to ignore
+	Extensions  []string `json:"spec"`        // file extensions to recognize; I.E.: the `ConfigFile.Extensions` .Name.
+	path        string   // path as used in memory; we'll probably just ignore this guy.
 }
 
 // RootConfig is used to tell the server what files are to
@@ -135,6 +105,15 @@ type RootConfig struct {
 	Default      string   `json:"default"`
 }
 
+func (r *RootConfig) info() {
+	println("> Root")
+	println(fmt.Sprintf("--> Path         = %s", r.Path))
+	println(fmt.Sprintf("--> Directory    = %s", r.Directory))
+	println(fmt.Sprintf("--> Files        = %s", r.Files))
+	println(fmt.Sprintf("--> AliasDefault = %s", r.AliasDefault))
+	println(fmt.Sprintf("--> Default      = %s", r.Default))
+}
+
 // ConfigFile is for JSON i/o.
 type ConfigFile struct {
 	Server     Server             `json:"serv"`
@@ -142,6 +121,113 @@ type ConfigFile struct {
 	Locations  []StaticPath       `json:"stat"`
 	Indexes    []IndexPath        `json:"indx,omitempty"`
 	Extensions []fsindex.FileSpec `json:"spec,omitempty"`
+}
+
+func (c *ConfigFile) doTLS() bool {
+	if useTLS {
+		return c.Server.hasCert() && c.Server.hasKey()
+	}
+	return c.Server.hasCert() && c.Server.hasKey() && c.Server.TLS
+}
+
+func (c *ConfigFile) initializeDefaults() {
+	// println("==> Configuring")
+	c.Server.initServerConfig()
+	c.Root = RootConfig{
+		Path:         constRootPathDefault,
+		Directory:    constRootDirectoryDefault,
+		Files:        strings.Split(constRootFilesDefault, ","),
+		Default:      constRootIndexDefault,
+		AliasDefault: strings.Split(constRootAliasDefault, ","),
+	}
+	c.Locations = []StaticPath{
+		StaticPath{
+			Source:    constImagesSourceDefault,
+			Target:    constImagesTargetDefault,
+			Browsable: true,
+		},
+		StaticPath{
+			Source:    constStaticSourceDefault,
+			Target:    constStaticTargetDefault,
+			Browsable: true,
+		},
+		// FIXME: this particular path is to be associated with indexing.
+		StaticPath{
+			Source:    "C:\\Users\\tfwro\\Desktop\\DesktopMess\\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\\downloads",
+			Target:    "/v/",
+			Browsable: true,
+		},
+	}
+	c.Indexes = []IndexPath{
+		// FIXME: this particular path is to be associated with indexing.
+		IndexPath{
+			Source:      "C:\\Users\\tfwro\\Desktop\\DesktopMess\\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\\downloads",
+			Target:      "/v/",
+			Browsable:   true,
+			Servable:    true,
+			Extensions:  []string{"Media"},
+			IgnorePaths: []string{},
+			path:        "",
+		},
+	}
+	c.Extensions = []fsindex.FileSpec{
+		fsindex.FileSpec{
+			Name:       "Media",
+			Extensions: strings.Split(constExtDefaultMedia, ","),
+		},
+		fsindex.FileSpec{
+			Name:       "Markdown",
+			Extensions: strings.Split(constExtDefaultMMD, ","),
+		},
+	}
+	// c.configInfo()
+}
+
+func (c *ConfigFile) getFilter(extensions []string) []fsindex.FileSpec {
+	var result []fsindex.FileSpec
+	for _, ext := range extensions {
+		if x, o := extMap[ext]; o {
+			result = append(result, *x)
+		}
+	}
+	return result
+}
+
+func (c *ConfigFile) configInfo() {
+	println("Configuration Information: Root")
+	println("=================================")
+	c.Server.info()
+	c.Root.info()
+	for _, loc := range configuration.Locations {
+		println("==> Location")
+		println(fmt.Sprintf("----> Source    = %s", loc.Source))
+		println(fmt.Sprintf("----> Browsable = %v", loc.Browsable))
+		println(fmt.Sprintf("----> Target    = %s", loc.Target))
+	}
+}
+
+func (c *ConfigFile) mapExtensions() {
+	extMap = make(map[string]*fsindex.FileSpec)
+	for i, x := range c.Extensions {
+		extMap[x.Name] = &(c.Extensions[i])
+	}
+}
+
+func (c *ConfigFile) write(path string) {
+	println(fmt.Sprintf("==> Marshal JSON %s", path))
+	if JSON, E := json.Marshal(c); E == nil {
+		ioutil.WriteFile(path, JSON, 0777)
+	} else {
+		panic(E)
+	}
+}
+
+func (c *ConfigFile) read(path string) {
+	println(fmt.Sprintf("==> Unmarshal JSON %s", path))
+	data := util.CacheBytes(path)
+	if E := json.Unmarshal(data, c); E != nil {
+		panic(E)
+	}
 }
 
 // SimpleModel collects our indexes
@@ -159,69 +245,73 @@ func (m *SimpleModel) create() {
 	m.PathSHA1 = make(map[string]*fsindex.PathEntry)
 }
 
-func writeConfig(cfg *ConfigFile) error {
-	if JSON, E := json.Marshal(cfg); E == nil {
-		ioutil.WriteFile("data/conf.json", JSON, 0777)
-		return nil
+func loadConfig() {
+
+	if !util.FileExists(defaultConfigFile) {
+		if !util.DirectoryExists(constDefaultDataPath) {
+			os.Mkdir(constDefaultDataPath, 0777)
+		}
+		configuration.write(defaultConfigFile)
+		println(constMessageWroteJSON)
+		os.Exit(1)
 	} else {
-		println(E)
-		return E
+		configuration.read(defaultConfigFile)
 	}
-}
-func readConfig(path string) (ConfigFile, error) {
 
-	var cfg ConfigFile
-	if E := json.Unmarshal([]byte(util.CacheFile(path)), &cfg); E == nil {
-		return cfg, E
-	}
-	return cfg, nil
-}
+	configuration.mapExtensions()
 
-func refreshConfig(tls string, port string, host string, path string) {
-	serveProt, servePort, serveHost, indexRoot = tls, port, host, path
-	indexPath = fmt.Sprintf(`%s://%s%s/%s`, serveProt, serveHost, servePort, indexRoot)
 }
 
 // FIXME: `pathIndex[0]` is used (solely).
 func configure(pathIndex ...string) {
+	configuration.initializeDefaults()
 
-	serveTLS = len(os.Args) == 2 && os.Args[1] == "tls"
-	refreshConfig(util.IIF(serveTLS, "https", "http"), ":5500", "tfw.io", "v")
+	// some default values
+	configuration.Server.TLS = len(os.Args) == 2 && os.Args[1] == "tls"
 
+	serverRoot = fmt.Sprintf(`%s://%s%s`, util.IIF(configuration.Server.TLS, "https", "http"), constServerDefaultPort, "tfw.io")
+	indexPath = fmt.Sprintf(`%s/%s`, serverRoot, "v")
+
+	loadConfig() // loads (or creates conf.json and terminates application)
+	indexPath = fmt.Sprintf(`%s://%s%s/%s`, util.IIF(configuration.Server.TLS, "https", "http"), configuration.Server.Port, configuration.Server.Host, configuration.Server.Path)
+
+	// TODO: remove this
 	println("- path for indexed files: ", indexPath)
-
-	tlsCrt, tlsKey = "data\\ia.crt", "data\\ia.key"
-
-	if !util.FileExists(configFilePath) {
-		if !util.DirectoryExists("./data") {
-			os.Mkdir("data", 0777)
-		}
-		if E := writeConfig(&configuration); E != nil {
-			panic(fmt.Sprintf("Error: writing configuration. %s", E))
-		} else {
-			panic("- wrote default data/conf.json\n  for your editing.")
-		}
-	} else {
-		if conf, R := readConfig(configFilePath); R == nil {
-			configuration = conf
-			println("- got data/conf.json")
-		} else {
-			panic(fmt.Sprintf("Error: reading configuration. %s", R))
-		}
-	}
-
 	pathEntry = fsindex.PathEntry{
 		PathSpec: fsindex.PathSpec{
 			FileEntry: fsindex.FileEntry{
 				Parent:   nil,
-				Name:     filepath.Base(pathIndex[0]),
+				Name:     util.AbsBase(pathIndex[0]),
 				FullPath: util.Abs(pathIndex[0]),
 				SHA1:     util.Sha1String(pathIndex[0]),
 			},
 			IsRoot: true},
 		FauxPath:    indexPath,
-		FileFilter:  []fsindex.FileSpec{localMedia, localMarkdown},
+		FileFilter:  configuration.Extensions,
 		IgnorePaths: []string{},
+	}
+	println("- check name:", pathEntry.Name)
+	println("- check sha1:", pathEntry.SHA1)
+	println("- check path:", pathEntry.FauxPath)
+
+	// TODO: check each Source path in configuration.Indexes
+	pathEntries = make([]fsindex.PathEntry, len(configuration.Indexes))
+	for i, p := range configuration.Indexes {
+		pathEntries[i].PathSpec = fsindex.PathSpec{
+			FileEntry: fsindex.FileEntry{
+				Parent:   nil,
+				Name:     util.AbsBase(util.Abs(p.Source)),
+				FullPath: util.Abs(p.Source),
+				SHA1:     util.Sha1String(util.Abs(p.Source)),
+			},
+			IsRoot: true}
+		pathEntries[i].FileFilter = configuration.getFilter(p.Extensions)
+		pathEntries[i].FauxPath = util.Cat(serverRoot, p.Alias)
+		pathEntries[i].IgnorePaths = p.IgnorePaths
+		print(fmt.Sprintf("- JSON index: %s\n", util.AbsBase(util.Abs(p.Source))))
+		for _, x := range pathEntries[i].FileFilter {
+			print(fmt.Sprintf("  - got extension: %s\n", x.Name))
+		}
 	}
 }
 
@@ -321,66 +411,75 @@ func checkSimpleModel(mdl *SimpleModel) {
 
 // not used
 func cliInfo() {
-	mCli.Name = "fsindex - indexer and simple utility web-server."
-	mCli.UsageText = `this guy is primarily for use with NPM, React Webpack.`
-	mCli.Authors = []cli.Author{cli.Author{Name: "tfw, et alia" /*, Email: "tfwroble@gmail.com"}, cli.Author{Name: "Et al."*/}}
-	mCli.Description = `A simple little prototyping web-server.`
-	mCli.Version = "0.0.0.A"
-	mCli.Copyright = "2019 tfwio.github.com/go-fsindex"
 }
 
 func initializeCli() {
+	mCli.Name = filepath.Base(os.Args[0])
+	mCli.Authors = []cli.Author{cli.Author{Name: "tfw, et alia" /*, Email: "tfwroble@gmail.com"}, cli.Author{Name: "Et al."*/}}
+	mCli.Version = "0.0.a"
+	mCli.Copyright = "2019 tfwio.github.com/go-fsindex — this software warrants no license.\n\tdisclaimer: use at own risk."
+	mCli.Action = func(*cli.Context) { initializeApp() }
 	mCli.Commands = []cli.Command{cli.Command{
-		Name:    "run",
-		Action:  func(*cli.Context) { initializeApp() },
-		Usage:   "Deault operation — run the server.",
-		Aliases: []string{"go"},
-		Hidden:  true,
+		Name:        "run",
+		Action:      func(*cli.Context) { initializeApp() },
+		Usage:       "Runs the server.",
+		Description: "Default operation.",
+		Aliases:     []string{"go"},
+		Flags:       []cli.Flag{},
 	}}
 	mCli.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:        "tls",
+			Destination: &useTLS,
+			Usage:       "Wether or not to use TLS.\n\tNote: if set, overrides (JSON) conf settings.",
+		},
 		cli.StringFlag{
 			Name:        "conf",
-			Value:       "data/conf.json",
-			Destination: &configFilePath,
+			Usage:       "Points to a custom configuration file.",
+			Value:       defaultConfigFile,
+			Destination: &defaultConfigFile,
 		},
 	}
-	if len(os.Args) == 1 {
-		mCli.Run([]string{os.Args[0], "run"})
-	} else {
-		mCli.Run(os.Args)
-	}
+	mCli.Run(os.Args)
 }
 
 func initializeApp() {
 
 	gin.SetMode(gin.ReleaseMode)
 	// should be using
+
+	println("==> configure")
 	configure(`C:\Users\tfwro\Desktop\DesktopMess\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\downloads`)
 
+	println("==> server setup")
 	mGin := gin.Default()
 
 	// these files are all stored in the public directory.
 	// they are the only files we're serving specifically in
 	// that directory.
 
-	defaultFile := util.Abs(util.Cat(rootConfig.Directory, "\\", rootConfig.Default))
-	for _, rootEntry := range rootConfig.AliasDefault {
-		target := util.Cat(rootConfig.Path, rootEntry)
-		fmt.Printf("- default alias: \"%s\" from \"%s\"\n", target, defaultFile)
+	// FIXME: what?
+	defaultFile := util.Abs(util.Cat(configuration.Root.Directory, "\\", configuration.Root.Default))
+	// configuration.configInfo()
+
+	println("==> server setup: configuration.Root.AliasDefault")
+	for _, rootEntry := range configuration.Root.AliasDefault {
+		fmt.Printf("  > Target = %s\n", rootEntry)
+		target := util.Cat(configuration.Root.Path, rootEntry)
 		mGin.StaticFile(target, defaultFile)
 	}
-	for _, rootEntry := range rootConfig.Files {
-		target := util.Cat(rootConfig.Path, rootEntry)
-		source := util.Abs(util.Cat(rootConfig.Directory, "\\", rootEntry))
+	for _, rootEntry := range configuration.Root.Files {
+		target := util.Cat(configuration.Root.Path, rootEntry)
+		source := util.Abs(util.Cat(configuration.Root.Directory, "\\", rootEntry))
 		fmt.Printf("- serving file: \"%s\" from \"%s\"\n", target, source)
 		mGin.StaticFile(target, source)
 	}
-	for _, tgt := range locations {
+	for _, tgt := range configuration.Locations {
 		println("- serving path:", tgt.Target, "from", util.Abs(tgt.Source))
 		mGin.StaticFS(tgt.Target, gin.Dir(util.Abs(tgt.Source), tgt.Browsable))
 	}
-	fmt.Printf("- default: \"%s\" from \"%s\"\n", rootConfig.Path, defaultFile)
-	mGin.StaticFile("/", defaultFile)
+	fmt.Printf("- default: \"%s\" from \"%s\"\n", configuration.Root.Path, defaultFile)
+	mGin.StaticFile(constRootPathDefault, defaultFile)
 
 	mGin.GET("/json/", serveJSONPathEntry)
 
@@ -388,15 +487,44 @@ func initializeApp() {
 
 	println("running")
 
-	if len(os.Args) == 2 && os.Args[1] == "tls" {
-		println("- Using TLS")
-		if err := mGin.RunTLS(servePort, tlsCrt, tlsKey); err != nil {
-			fmt.Println("router error:", err)
+	if configuration.doTLS() {
+		println("- use tls")
+		if err := mGin.RunTLS(configuration.Server.Port, configuration.Server.Crt, configuration.Server.Key); err != nil {
+			panic(fmt.Sprintf("router error: %s\n", err))
 		}
 	} else {
-		println("- Not using TLS")
-		if err := mGin.Run(servePort); err != nil {
-			fmt.Println("router error:", err)
+		println("- no tls")
+		if err := mGin.Run(configuration.Server.Port); err != nil {
+			panic(fmt.Sprintf("router error: %s\n", err))
 		}
 	}
 }
+
+const (
+	constServerDefaultHost    = "localhost"
+	constServerDefaultPort    = ":5500"
+	constServerTLSCertDefault = "data\\ia.crt"
+	constServerTLSKeyDefault  = "data\\ia.key"
+	constDefaultDataPath      = "./data"
+	constConfJSONReadSuccess  = "got JSON configuration"
+	constConfJSONReadError    = "Error: failed to read JSON configuration. %s\n"
+	constMessageWroteJSON     = `
+We've exported a default data/conf.json for your editing.
+
+Modify the file per your preferences.
+
+[terminating application]
+`
+	constMessageErrorWritingJSON = "Error: writing configuration. %s"
+	constRootAliasDefault        = "home,index.htm,index.html,index,default,default.htm"
+	constRootFilesDefault        = "json.json,bundle.js,favicon.ico"
+	constRootIndexDefault        = "index.html"
+	constRootDirectoryDefault    = ".\\public"
+	constRootPathDefault         = "/"
+	constStaticSourceDefault     = "public\\static"
+	constStaticTargetDefault     = "/static/"
+	constImagesSourceDefault     = "public\\images"
+	constImagesTargetDefault     = "/images/"
+	constExtDefaultMedia         = ".mp4,.m4a,.mp3"
+	constExtDefaultMMD           = ".md,.mmd"
+)
