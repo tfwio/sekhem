@@ -259,14 +259,18 @@ func makeMdl() SimpleModel {
 	return s
 }
 
+// AddPath is a callback per PathEntry.
+// It adds each PathEntry to a flat (non-hierarchical) map (dictionary).
 func (m *SimpleModel) AddPath(p *fsindex.PathEntry, c *fsindex.PathEntry) {
 	m.Path[c.Rooted(p)] = c
-	m.PathSHA1[c.Rooted(p)] = c
+	m.PathSHA1[c.SHA1] = c
 }
 
+// AddFile is a callback per FileEntry.
+// It adds each FileEntry to a flat (non-hierarchical) map (dictionary).
 func (m *SimpleModel) AddFile(p *fsindex.PathEntry, c *fsindex.FileEntry) {
 	m.File[c.Rooted(p)] = c
-	m.FileSHA1[c.Rooted(p)] = c
+	m.FileSHA1[c.SHA1] = c
 }
 
 func loadModel() {
