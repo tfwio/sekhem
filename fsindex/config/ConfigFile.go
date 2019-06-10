@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"tfw.io/Go/fsindex/fsindex"
@@ -18,6 +19,22 @@ type Configuration struct {
 	Indexes    []IndexPath        `json:"indx,omitempty"`
 	Extensions []fsindex.FileSpec `json:"spec,omitempty"`
 	indexPath  string
+}
+
+// LoadConfig loads JSON configuration.
+func (c *Configuration) LoadConfig() {
+	if !util.FileExists(DefaultConfigFile) {
+		if !util.DirectoryExists(constDefaultDataPath) {
+			os.Mkdir(constDefaultDataPath, 0777)
+		}
+		c.SaveJSON(DefaultConfigFile)
+		println(constMessageWroteJSON)
+		os.Exit(1)
+	} else {
+		c.LoadJSON(DefaultConfigFile)
+	}
+
+	c.MapExtensions()
 }
 
 // DoTLS returns a boolean value that tells wether or not

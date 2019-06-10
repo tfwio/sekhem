@@ -47,23 +47,6 @@ func (m *SimpleModel) create() {
 	m.PathSHA1 = make(map[string]*fsindex.PathEntry)
 }
 
-func loadConfig() {
-
-	if !util.FileExists(config.DefaultConfigFile) {
-		if !util.DirectoryExists(constDefaultDataPath) {
-			os.Mkdir(constDefaultDataPath, 0777)
-		}
-		configuration.SaveJSON(config.DefaultConfigFile)
-		println(constMessageWroteJSON)
-		os.Exit(1)
-	} else {
-		configuration.LoadJSON(config.DefaultConfigFile)
-	}
-
-	configuration.MapExtensions()
-
-}
-
 // FIXME: `pathIndex[0]` is used (solely).
 func configure(pathIndex ...string) {
 	configuration.InitializeDefaults()
@@ -75,7 +58,7 @@ func configure(pathIndex ...string) {
 	// indexPath = fmt.Sprintf(`%s/%s`, serverRoot, "v")
 	indexPath = fmt.Sprintf(`%s/%s`, serverRoot, "v")
 
-	loadConfig() // loads (or creates conf.json and terminates application)
+	configuration.LoadConfig() // loads (or creates conf.json and terminates application)
 	indexPath = fmt.Sprintf(`%s://%s%s/%s`, util.IIF(configuration.Server.TLS, "https", "http"), configuration.Server.Host, configuration.Server.Port, configuration.Server.Path)
 
 	// TODO: remove this
