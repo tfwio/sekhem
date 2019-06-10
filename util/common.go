@@ -179,6 +179,22 @@ func Sha1String(pStrData string) string {
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
+// ToBase64 gets base-64 url-string
+func ToBase64(input string) string {
+	return base64.URLEncoding.EncodeToString([]byte(input))
+}
+
+// FromBase64e gets base-64 url-string
+func FromBase64e(input string) ([]byte, error) {
+	return base64.URLEncoding.DecodeString(input)
+}
+
+// FromBase64 gets base-64 url-string; ignores error.
+func FromBase64(input string) []byte {
+	result, _ := base64.URLEncoding.DecodeString(input)
+	return result
+}
+
 // UNUSED
 // func sha1Bytes(pStrData string) []byte {
 // 	hasher := sha1.New()
