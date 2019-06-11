@@ -4,14 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/urfave/cli"
 
-	"tfw.io/Go/fsindex/fsindex"
 	"tfw.io/Go/fsindex/fsindex/config"
-	"tfw.io/Go/fsindex/util"
 )
 
 // Configuration variables
@@ -20,137 +17,13 @@ var (
 	configuration config.Configuration
 	mCli          cli.App
 
-	pathEntry fsindex.Model
-
 	xCounter  int32
 	fCounter  int32
 	xpCounter *int32
 )
 
-// SimpleModel collects our indexes
-type SimpleModel struct {
-	File     map[string]*fsindex.FileEntry
-	FileSHA1 map[string]*fsindex.FileEntry
-	Path     map[string]*fsindex.PathEntry
-	PathSHA1 map[string]*fsindex.PathEntry
-}
-
-func (m *SimpleModel) create() {
-	m.File = make(map[string]*fsindex.FileEntry)
-	m.FileSHA1 = make(map[string]*fsindex.FileEntry)
-	m.Path = make(map[string]*fsindex.PathEntry)
-	m.PathSHA1 = make(map[string]*fsindex.PathEntry)
-}
-
-func createPathEntry(path string) fsindex.Model {
-	println("- path for indexed files: ", configuration.GetPath("v"))
-	// configure, createIndex, checkSimpleModel
-	pe := fsindex.Model{
-		PathEntry: fsindex.PathEntry{
-			PathSpec: fsindex.PathSpec{
-				FileEntry: fsindex.FileEntry{
-					Parent:   nil,
-					Name:     util.AbsBase(path),
-					FullPath: util.Abs(path),
-					SHA1:     util.Sha1String(path),
-				},
-				IsRoot: true},
-			FauxPath:    configuration.GetPath("v"),
-			FileFilter:  configuration.Extensions,
-			IgnorePaths: []string{},
-		},
-		Settings: fsindex.Default,
-	}
-	return pe
-}
-
 func main() {
 	initializeCli()
-}
-
-func makeMdl() SimpleModel {
-	var s SimpleModel
-	if s.File != nil {
-		for k := range s.File {
-			delete(s.File, k)
-		}
-	}
-	if s.FileSHA1 != nil {
-		for k := range s.FileSHA1 {
-			delete(s.FileSHA1, k)
-		}
-	}
-	if s.Path != nil {
-		for k := range s.Path {
-			delete(s.Path, k)
-		}
-	}
-	if s.PathSHA1 != nil {
-		for k := range s.PathSHA1 {
-			delete(s.PathSHA1, k)
-		}
-	}
-	s.create()
-	return s
-}
-
-// AddPath is a callback per PathEntry.
-// It adds each PathEntry to a flat (non-hierarchical) map (dictionary).
-func (m *SimpleModel) AddPath(p *fsindex.Model, c *fsindex.PathEntry) {
-	m.Path[c.Rooted(p)] = c
-	m.PathSHA1[c.SHA1] = c
-}
-
-// AddFile is a callback per FileEntry.
-// It adds each FileEntry to a flat (non-hierarchical) map (dictionary).
-func (m *SimpleModel) AddFile(p *fsindex.Model, c *fsindex.FileEntry) {
-	m.File[c.Rooted(p)] = c
-	m.FileSHA1[c.SHA1] = c
-}
-
-func buildFileSystemModel(model *fsindex.Model, path string, spath string) {
-
-	xCounter, fCounter = 0, 0
-
-	mdl := makeMdl()
-
-	handler := fsindex.Handlers{
-		ChildPath: func(root *fsindex.Model, child *fsindex.PathEntry) bool {
-			mdl.AddPath(root, child)
-			return false
-		},
-		ChildFile: func(root *fsindex.Model, child *fsindex.FileEntry) bool {
-			ext := strings.ToLower(filepath.Ext(child.FullPath))
-			if ext == ".md" {
-				// datestring := checkDateString(child.Base())
-				mdl.AddFile(root, child)
-				// println(fmt.Sprintf("  - f%-4d, %s -- %s", fCounter, (*child).Path, datestring))
-				// return true
-			}
-			fCounter++
-			return false
-		},
-	}
-
-	model.Refresh(model, &xCounter, &handler)
-
-	// checkSimpleModel(&mdl)
-}
-
-func checkSimpleModel(mdl *SimpleModel) {
-	// map counters don't yield adequate length
-	println("File map Count: ", len(mdl.File))
-	println("Path map Count: ", len(mdl.Path))
-	//
-	println("File Count: ", fCounter)
-	println("Path Count: ", xCounter)
-	ref1 := &pathEntry.Paths[0].Files[0]
-	println("some model: ", ref1.FullPath)
-	println("parent:", ref1.Parent.FauxPath)
-	fmt.Printf("looking in \"%s\" for files...\n", ref1.Parent.Base())
-	for _, x := range ref1.Parent.Files {
-		println("  -->", x.Path)
-	}
 }
 
 func initializeCli() {
@@ -190,9 +63,10 @@ func initialize() {
 	configuration.InitializeDefaults(tempPath, serv)
 	configuration.FromJSON() // loads (or creates conf.json and terminates application)
 
-	mGin := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
-	pathEntry = createPathEntry(tempPath) // pathEntry.Info()
+	mGin := gin.Default()
+
+	pathEntry := createPathEntry(tempPath, "v") // pathEntry.Info()
 	buildFileSystemModel(&pathEntry, tempPath, serv)
 	configuration.GinConfig(mGin, &pathEntry)
 

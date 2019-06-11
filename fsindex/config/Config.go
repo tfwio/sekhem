@@ -32,28 +32,27 @@ func (c *Configuration) GinConfig(mGin *gin.Engine, paths ...*fsindex.Model) {
 	for _, rootEntry := range c.Root.AliasDefault {
 		target := util.Cat(c.Root.Path, rootEntry)
 		mGin.StaticFile(target, DefaultFile)
-		fmt.Printf("  ? Target = %s, Source = %s\n", target, c.DefaultFile())
+		fmt.Printf("  > Target = %-18s, Source = %s\n", target, c.DefaultFile())
 	}
 	println("root-files")
 	for _, rootEntry := range c.Root.Files {
 		target := util.Cat(c.Root.Path, rootEntry)
 		source := util.Abs(util.Cat(c.Root.Directory, "\\", rootEntry))
 		mGin.StaticFile(target, source)
-		fmt.Printf("  > Target = %s, Source = %s\n", target, source)
+		fmt.Printf("  > Target = %-18s, Source = %s\n", target, source)
 	}
 	println("locations")
 	for _, tgt := range c.Locations {
-		println("- serving path:", tgt.Target, "from", util.Abs(tgt.Source))
 		mGin.StaticFS(tgt.Target, gin.Dir(util.Abs(tgt.Source), tgt.Browsable))
-		fmt.Printf("  > Target = %s, Source = %s\n", tgt.Target, tgt.Source)
+		fmt.Printf("  > Target = %-18s, Source = %s\n", tgt.Target, tgt.Source)
 	}
 
-	fmt.Printf("- default: Target = %s, Source =  %s\n", c.Root.Path, DefaultFile)
+	fmt.Printf("default\n  > Target = %-18s, Source =  %s\n", c.Root.Path, DefaultFile)
 	mGin.StaticFile(c.Root.Path, DefaultFile)
 
 	for _, path := range paths {
 		p := util.Cat("/json/", path.Name)
-		println(fmt.Sprintf("--> adding JSON %s", p))
+		println(fmt.Sprintf("JSON\n  > Target = %s", p))
 		mGin.GET(p, func(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, &path)
 		})
