@@ -108,7 +108,7 @@ func (m *SimpleModel) AddFile(p *fsindex.Model, c *fsindex.FileEntry) {
 	m.FileSHA1[c.SHA1] = c
 }
 
-func buildFileSystemModel(path string, spath string) {
+func buildFileSystemModel(model *fsindex.Model, path string, spath string) {
 
 	xCounter, fCounter = 0, 0
 
@@ -132,7 +132,7 @@ func buildFileSystemModel(path string, spath string) {
 		},
 	}
 
-	pathEntry.Refresh(nil, &xCounter, &handler)
+	model.Refresh(model, &xCounter, &handler)
 
 	// checkSimpleModel(&mdl)
 }
@@ -144,11 +144,9 @@ func checkSimpleModel(mdl *SimpleModel) {
 	//
 	println("File Count: ", fCounter)
 	println("Path Count: ", xCounter)
-	// println("some model: ", (*mdl.Path[`.mmd\THIRD PARTY\relisoft-windows-api-tut\12 olerant.md`]).FullPath)
 	ref1 := &pathEntry.Paths[0].Files[0]
 	println("some model: ", ref1.FullPath)
 	println("parent:", ref1.Parent.FauxPath)
-	// mf := mdl.File[`.mmd\THIRD PARTY\relisoft-windows-api-tut\12 olerant.md`]
 	fmt.Printf("looking in \"%s\" for files...\n", ref1.Parent.Base())
 	for _, x := range ref1.Parent.Files {
 		println("  -->", x.Path)
@@ -195,7 +193,7 @@ func initialize() {
 	mGin := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
 	pathEntry = createPathEntry(tempPath) // pathEntry.Info()
-	buildFileSystemModel(tempPath, serv)
+	buildFileSystemModel(&pathEntry, tempPath, serv)
 	configuration.GinConfig(mGin, &pathEntry)
 
 	if configuration.DoTLS() {

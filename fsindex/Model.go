@@ -1,8 +1,16 @@
 package fsindex
 
-// PathType has a Refresh method
-type PathType interface {
-	Refresh(rootPathEntry *PathEntry, counter *(int32), handler *Handlers)
+// Default Settings
+var (
+	Default = Settings{
+		OmitRootNameFromPath: false,
+	}
+	currentSettings = Default
+)
+
+// Settings will slightly alter how the `Refresh` method runs.
+type Settings struct {
+	OmitRootNameFromPath bool
 }
 
 // Model is the same as PathEntry but with Settings

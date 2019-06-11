@@ -8,19 +8,6 @@ import (
 	"tfw.io/Go/fsindex/util"
 )
 
-// Default Settings
-var (
-	Default = Settings{
-		OmitRootNameFromPath: false,
-	}
-	currentSettings = Default
-)
-
-// Settings will slightly alter how the `Refresh` method runs.
-type Settings struct {
-	OmitRootNameFromPath bool
-}
-
 // PathEntry ...
 type PathEntry struct {
 	PathSpec
@@ -89,28 +76,19 @@ func (p *PathEntry) Review(mRoot *Model, cbPath *CBPath, cbFile *CBFile) {
 // parameter `counter (*int32)`: pointer to our indexing integer (counter).
 // parameter `callback (RefreshAction)` is a method (if defined) which
 //                                      can be used arbitrarily.
-func (p *PathEntry) Refresh(rootPathEntry *Model, counter *(int32), handler *Handlers) {
+func (p *PathEntry) Refresh(model *Model, counter *(int32), handler *Handlers) {
 
-	// create a reference node pointing to the tree-root
-	var mRoot *Model
-
-	// if the first parent element is root, we need to build some
-	// reference memory (dictionary of ignore-paths).
 	if p.IsRoot {
-		mRoot = &Model{PathEntry: *p, Settings: rootPathEntry.Settings} // rootPathEntry is `nil`
-		// Absolute path for strings.Replace(…) functionality.
 		for i := 0; i < len(p.IgnorePaths); i++ {
 			p.IgnorePaths[i] = util.Abs(p.IgnorePaths[i])
 		}
-	} else {
-		mRoot = rootPathEntry // assign mRoot
 	}
 
 	p.Index = *counter // Assign index
 	*counter++
 
 	if handler != nil {
-		if handler.ChildPath(mRoot, p) {
+		if handler.ChildPath(model, p) {
 			return
 		}
 	}
@@ -133,10 +111,9 @@ func (p *PathEntry) Refresh(rootPathEntry *Model, counter *(int32), handler *Han
 
 		if !fileinfo.IsDir() {
 
-			for i := 0; i < len(mRoot.FileFilter); i++ {
+			for i := 0; i < len(model.FileFilter); i++ {
 
-				if mRoot.FileFilter[i].Match(mFullPath) {
-
+				if model.FileFilter[i].Match(mFullPath) {
 					var child = FileEntry{
 						Parent:    p,
 						FullPath:  mFullPath,
@@ -145,10 +122,10 @@ func (p *PathEntry) Refresh(rootPathEntry *Model, counter *(int32), handler *Han
 						Extension: filepath.Ext(mFullPath),
 						Mod:       fileinfo.ModTime(),
 					}
-					child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(mRoot)))
+					child.Path = util.UnixSlash(util.Cat(model.FauxPath, "/", child.Rooted(model)))
 					p.Files = append(p.Files, child)
 					if handler != nil {
-						if handler.ChildFile(mRoot, &child) {
+						if handler.ChildFile(model, &child) {
 							return
 						}
 					}
@@ -183,16 +160,10 @@ func (p *PathEntry) Refresh(rootPathEntry *Model, counter *(int32), handler *Han
 					IsRoot: false,
 				},
 			}
-			child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(mRoot)))
+			child.Path = util.UnixSlash(util.Cat(model.FauxPath, "/", child.Rooted(model)))
 
-			if child.IsIgnore(mRoot) {
-
-				fmt.Printf("- ignored: %s\n", child.FullPath)
-
-			} else {
-
-				child.Refresh(mRoot, counter, handler)
-
+			if !child.IsIgnore(model) {
+				child.Refresh(model, counter, handler)
 				p.Paths = append(p.Paths, child)
 			}
 

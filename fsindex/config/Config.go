@@ -18,7 +18,7 @@ var (
 )
 
 // GinConfig configures gin.Engine.
-func (c *Configuration) GinConfig(mGin *gin.Engine, paths ...*fsindex.PathEntry) {
+func (c *Configuration) GinConfig(mGin *gin.Engine, paths ...*fsindex.Model) {
 
 	// these files are all stored in the public directory.
 	// they are the only files we're serving specifically in
