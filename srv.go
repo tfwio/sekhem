@@ -20,7 +20,7 @@ var (
 	configuration config.Configuration
 	mCli          cli.App
 
-	pathEntry fsindex.PathEntry
+	pathEntry fsindex.Model
 
 	xCounter  int32
 	fCounter  int32
@@ -42,21 +42,24 @@ func (m *SimpleModel) create() {
 	m.PathSHA1 = make(map[string]*fsindex.PathEntry)
 }
 
-func createPathEntry(path string) fsindex.PathEntry {
+func createPathEntry(path string) fsindex.Model {
 	println("- path for indexed files: ", configuration.GetPath("v"))
 	// configure, createIndex, checkSimpleModel
-	pe := fsindex.PathEntry{
-		PathSpec: fsindex.PathSpec{
-			FileEntry: fsindex.FileEntry{
-				Parent:   nil,
-				Name:     util.AbsBase(path),
-				FullPath: util.Abs(path),
-				SHA1:     util.Sha1String(path),
-			},
-			IsRoot: true},
-		FauxPath:    configuration.GetPath("v"),
-		FileFilter:  configuration.Extensions,
-		IgnorePaths: []string{},
+	pe := fsindex.Model{
+		PathEntry: fsindex.PathEntry{
+			PathSpec: fsindex.PathSpec{
+				FileEntry: fsindex.FileEntry{
+					Parent:   nil,
+					Name:     util.AbsBase(path),
+					FullPath: util.Abs(path),
+					SHA1:     util.Sha1String(path),
+				},
+				IsRoot: true},
+			FauxPath:    configuration.GetPath("v"),
+			FileFilter:  configuration.Extensions,
+			IgnorePaths: []string{},
+		},
+		Settings: fsindex.Default,
 	}
 	return pe
 }
@@ -93,14 +96,14 @@ func makeMdl() SimpleModel {
 
 // AddPath is a callback per PathEntry.
 // It adds each PathEntry to a flat (non-hierarchical) map (dictionary).
-func (m *SimpleModel) AddPath(p *fsindex.PathEntry, c *fsindex.PathEntry) {
+func (m *SimpleModel) AddPath(p *fsindex.Model, c *fsindex.PathEntry) {
 	m.Path[c.Rooted(p)] = c
 	m.PathSHA1[c.SHA1] = c
 }
 
 // AddFile is a callback per FileEntry.
 // It adds each FileEntry to a flat (non-hierarchical) map (dictionary).
-func (m *SimpleModel) AddFile(p *fsindex.PathEntry, c *fsindex.FileEntry) {
+func (m *SimpleModel) AddFile(p *fsindex.Model, c *fsindex.FileEntry) {
 	m.File[c.Rooted(p)] = c
 	m.FileSHA1[c.SHA1] = c
 }
@@ -112,11 +115,11 @@ func buildFileSystemModel(path string, spath string) {
 	mdl := makeMdl()
 
 	handler := fsindex.Handlers{
-		ChildPath: func(root *fsindex.PathEntry, child *fsindex.PathEntry) bool {
+		ChildPath: func(root *fsindex.Model, child *fsindex.PathEntry) bool {
 			mdl.AddPath(root, child)
 			return false
 		},
-		ChildFile: func(root *fsindex.PathEntry, child *fsindex.FileEntry) bool {
+		ChildFile: func(root *fsindex.Model, child *fsindex.FileEntry) bool {
 			ext := strings.ToLower(filepath.Ext(child.FullPath))
 			if ext == ".md" {
 				// datestring := checkDateString(child.Base())
@@ -185,8 +188,6 @@ func initializeCli() {
 func initialize() {
 
 	serv, tempPath := "v", `C:\Users\tfwro\Desktop\DesktopMess\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\downloads`
-
-	println("==> configure")
 
 	configuration.InitializeDefaults(tempPath, serv)
 	configuration.FromJSON() // loads (or creates conf.json and terminates application)

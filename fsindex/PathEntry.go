@@ -8,6 +8,19 @@ import (
 	"tfw.io/Go/fsindex/util"
 )
 
+// Default Settings
+var (
+	Default = Settings{
+		OmitRootNameFromPath: false,
+	}
+	currentSettings = Default
+)
+
+// Settings will slightly alter how the `Refresh` method runs.
+type Settings struct {
+	OmitRootNameFromPath bool
+}
+
 // PathEntry ...
 type PathEntry struct {
 	PathSpec
@@ -20,6 +33,7 @@ type PathEntry struct {
 	FauxPath string `json:"uri,omitempty"`
 }
 
+// Info prints out some PathEntry info, of course.
 func (p *PathEntry) Info() {
 	println("- check name:", p.Name)
 	println("- check sha1:", p.SHA1)
@@ -40,7 +54,7 @@ func (p *PathEntry) Top() *PathEntry {
 }
 
 // IsIgnore ...
-func (p *PathEntry) IsIgnore(r *PathEntry) bool {
+func (p *PathEntry) IsIgnore(r *Model) bool {
 	for _, mNode := range r.IgnorePaths {
 		if mNode == p.Abs() {
 			return true
@@ -52,18 +66,18 @@ func (p *PathEntry) IsIgnore(r *PathEntry) bool {
 // Review is similar to `Refresh()` except we don't rebuild the graph.
 // here, we're just linking the callbacks, directories are listed before
 // files like the `Refresh()` method.
-func (p *PathEntry) Review(cbPath *CBPath, cbFile *CBFile) {
+func (p *PathEntry) Review(mRoot *Model, cbPath *CBPath, cbFile *CBFile) {
 	for _, child := range p.Paths {
 		if cbPath != nil {
-			if (*cbPath)(child.Parent, &child) {
+			if (*cbPath)(mRoot, &child) {
 				return
 			}
-			child.Review(cbPath, cbFile)
+			child.Review(mRoot, cbPath, cbFile)
 		}
 	}
 	for _, child := range p.Files {
 		if cbPath != nil {
-			if (*cbFile)(child.Parent, &child) {
+			if (*cbFile)(mRoot, &child) {
 				return
 			}
 		}
@@ -75,18 +89,18 @@ func (p *PathEntry) Review(cbPath *CBPath, cbFile *CBFile) {
 // parameter `counter (*int32)`: pointer to our indexing integer (counter).
 // parameter `callback (RefreshAction)` is a method (if defined) which
 //                                      can be used arbitrarily.
-func (p *PathEntry) Refresh(rootPathEntry *PathEntry, counter *(int32), handler *Handlers) {
+func (p *PathEntry) Refresh(rootPathEntry *Model, counter *(int32), handler *Handlers) {
 
 	// create a reference node pointing to the tree-root
-	var mRoot *PathEntry
+	var mRoot *Model
 
 	// if the first parent element is root, we need to build some
 	// reference memory (dictionary of ignore-paths).
 	if p.IsRoot {
-		mRoot = p // rootPathEntry is `nil`
+		mRoot = &Model{PathEntry: *p, Settings: rootPathEntry.Settings} // rootPathEntry is `nil`
 		// Absolute path for strings.Replace(…) functionality.
 		for i := 0; i < len(p.IgnorePaths); i++ {
-			p.IgnorePaths[i], _ = filepath.Abs(p.IgnorePaths[i])
+			p.IgnorePaths[i] = util.Abs(p.IgnorePaths[i])
 		}
 	} else {
 		mRoot = rootPathEntry // assign mRoot
@@ -131,27 +145,17 @@ func (p *PathEntry) Refresh(rootPathEntry *PathEntry, counter *(int32), handler 
 						Extension: filepath.Ext(mFullPath),
 						Mod:       fileinfo.ModTime(),
 					}
-					child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(p)))
+					child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(mRoot)))
 					p.Files = append(p.Files, child)
 					if handler != nil {
 						if handler.ChildFile(mRoot, &child) {
 							return
 						}
-						// println(fmt.Sprintf("  - %s", child.Base()))
 					}
 
 				}
 			}
 
-			// if !isMediaExclude(mPath.Name()) {
-			// indexMediaModelPaths(mPathAbs)
-			// }
-			// } else {
-			// 	mFileAbs, _ := filepath.Abs(filepath.Join(mAbs, mPath.Name()))
-			// 	if isMediaFile(mFileAbs) {
-			// 		MediaFiles = append(MediaFiles, mFileAbs)
-			// 	}
-			// }
 		}
 	}
 
@@ -179,7 +183,7 @@ func (p *PathEntry) Refresh(rootPathEntry *PathEntry, counter *(int32), handler 
 					IsRoot: false,
 				},
 			}
-			child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(p)))
+			child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(mRoot)))
 
 			if child.IsIgnore(mRoot) {
 

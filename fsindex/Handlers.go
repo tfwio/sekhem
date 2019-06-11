@@ -10,16 +10,16 @@ import (
 
 // CBPath is a simple callback;
 // if you return true, then the caller function immediately returns.
-type CBPath func(*PathEntry, *PathEntry) bool // (*interface{}, error)
+type CBPath func(*Model, *PathEntry) bool // (*interface{}, error)
 // CBFile is a simple callback
 // if you return true, then the caller function immediately returns.
-type CBFile func(*PathEntry, *FileEntry) bool // (*interface{}, error)
+type CBFile func(*Model, *FileEntry) bool // (*interface{}, error)
 
 // FileHandler is a simple callback.
-type FileHandler func(*PathEntry, *FileEntry) bool
+type FileHandler func(*Model, *FileEntry) bool
 
 // PathHandler is a simple callback.
-type PathHandler func(*PathEntry, *PathEntry) bool
+type PathHandler func(*Model, *PathEntry) bool
 
 // Handlers contains simple callbacks.
 type Handlers struct {
@@ -35,15 +35,15 @@ type Handlers struct {
 //
 // Only difference here is that we're using CBPath and CBFile as opposed to a
 // Handlers structure which contains callbacks for our `Refresh(…)`.
-func (p *PathEntry) RefreshCB(rootPathEntry *PathEntry, counter *(int32), cbPath *CBPath, cbFile *CBFile) {
+func (p *PathEntry) RefreshCB(rootPathEntry *Model, counter *(int32), cbPath *CBPath, cbFile *CBFile) {
 
 	// create a reference node pointing to the tree-root
-	var mRoot *PathEntry
+	var mRoot *Model
 
 	// if the first parent element is root, we need to build some
 	// reference memory (dictionary of ignore-paths).
 	if p.IsRoot {
-		mRoot = p
+		mRoot = &Model{PathEntry: *p}
 		// build absolute path list to ignore.
 		for i := 0; i < len(p.IgnorePaths); i++ {
 			p.IgnorePaths[i], _ = filepath.Abs(p.IgnorePaths[i])
@@ -90,7 +90,7 @@ func (p *PathEntry) RefreshCB(rootPathEntry *PathEntry, counter *(int32), cbPath
 						Extension: filepath.Ext(mFullPath),
 					}
 					// Rooted only works once .FullPath is set.
-					child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(p)))
+					child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(mRoot)))
 					p.Files = append(p.Files, child)
 					if cbFile != nil {
 						if (*cbFile)(mRoot, &child) {
@@ -101,16 +101,6 @@ func (p *PathEntry) RefreshCB(rootPathEntry *PathEntry, counter *(int32), cbPath
 
 				}
 			}
-
-			// if !isMediaExclude(mPath.Name()) {
-			// indexMediaModelPaths(mPathAbs)
-			// }
-			// } else {
-			// 	mFileAbs, _ := filepath.Abs(filepath.Join(mAbs, mPath.Name()))
-			// 	if isMediaFile(mFileAbs) {
-			// 		MediaFiles = append(MediaFiles, mFileAbs)
-			// 	}
-			// }
 		}
 	}
 
@@ -138,7 +128,7 @@ func (p *PathEntry) RefreshCB(rootPathEntry *PathEntry, counter *(int32), cbPath
 					IsRoot: false,
 				},
 			}
-			child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(p)))
+			child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.Rooted(mRoot)))
 
 			if child.IsIgnore(mRoot) {
 
