@@ -17,6 +17,11 @@ const (
 	resErrorCacheFile = "- error: cache file [%s]\n"
 )
 
+// Wrapper concatenates text and wraps it like `Wrap` does with `sep`-arator.
+func Wrapper(sep string, text ...string) string {
+	return Wrap(strings.Join(text, sep), sep)
+}
+
 // Wrap wraps text with `wrap`, written for converting "v" to "/v/".
 // see: https://blog.golang.org/strings
 func Wrap(text string, wrap string) string {
@@ -86,6 +91,15 @@ func StripFileExtension(path string) string {
 	return strings.Replace(path, filepath.Ext(path), "", -1)
 }
 
+// StripFileExtensionC ...yep.
+func StripFileExtensionC(condition bool, path string) string {
+	if condition {
+		return StripFileExtension(path)
+	}
+	return path
+
+}
+
 // Abs returns an absolute representation of path; Ignores errors.
 func Abs(path string) (dir string) {
 	dir, _ = filepath.Abs(path)
@@ -138,6 +152,16 @@ func TrimUnixSlashLeft(pStrInput string) string {
 // TrimUnixSlashRight trims right forward-slash from input string.
 func TrimUnixSlashRight(pStrInput string) string {
 	return strings.TrimRight(pStrInput, "/")
+}
+
+// MultiReplace converts whatever to whatever.
+// This is used to convert, for example, various characters (`find`) to a dash.
+func MultiReplace(input string, replace string, find ...string) string {
+	haystack := input
+	for _, needle := range find {
+		haystack = strings.Replace(haystack, needle, replace, -1)
+	}
+	return haystack
 }
 
 // Space2Dash converts or replaces all spaces in a string with a small-dash.
