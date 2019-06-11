@@ -8,16 +8,16 @@ type SimpleModel struct {
 	PathSHA1 map[string]*PathEntry
 }
 
-// Create makes a new data-set.
-func (m *SimpleModel) Create() {
+// CreateMaps makes a new data-set.
+func (m *SimpleModel) CreateMaps() {
 	m.File = make(map[string]*FileEntry)
 	m.FileSHA1 = make(map[string]*FileEntry)
 	m.Path = make(map[string]*PathEntry)
 	m.PathSHA1 = make(map[string]*PathEntry)
 }
 
-// Reset destroys all top level items (if hierarchical) in the maps.
-func (m *SimpleModel) Reset() {
+// ResetMaps destroys all top level items (if hierarchical) in the maps.
+func (m *SimpleModel) ResetMaps() {
 	if m.File != nil {
 		for k := range m.File {
 			delete(m.File, k)

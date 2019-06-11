@@ -58,7 +58,7 @@ func initializeCli() {
 
 func initialize() {
 
-	serv, tempPath := "v", `C:\Users\tfwro\Desktop\DesktopMess\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\downloads`
+	serv, tempPath := "v", `multi-media\\public`
 
 	configuration.InitializeDefaults(tempPath, serv)
 	configuration.FromJSON() // loads (or creates conf.json and terminates application)
@@ -66,17 +66,15 @@ func initialize() {
 	gin.SetMode(gin.ReleaseMode)
 	mGin := gin.Default()
 
-	pathEntry := createPathEntry(tempPath, "v") // pathEntry.Info()
-	buildFileSystemModel(&pathEntry, tempPath, serv)
-	configuration.GinConfig(mGin, &pathEntry)
+	configuration.GinConfig(mGin)
 
 	if configuration.DoTLS() {
-		println("- use tls")
+		println("- TLS on")
 		if err := mGin.RunTLS(configuration.Server.Port, configuration.Server.Crt, configuration.Server.Key); err != nil {
 			panic(fmt.Sprintf("router error: %s\n", err))
 		}
 	} else {
-		println("- no tls")
+		println("- TLS off")
 		if err := mGin.Run(configuration.Server.Port); err != nil {
 			panic(fmt.Sprintf("router error: %s\n", err))
 		}
