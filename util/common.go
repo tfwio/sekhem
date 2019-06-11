@@ -17,6 +17,19 @@ const (
 	resErrorCacheFile = "- error: cache file [%s]\n"
 )
 
+// Wrap wraps text with `wrap`, written for converting "v" to "/v/".
+// see: https://blog.golang.org/strings
+func Wrap(text string, wrap string) string {
+	result := text
+	if strings.Index(result, wrap) != 0 {
+		result = Cat(wrap, result)
+	}
+	if strings.LastIndex(result, wrap) != (len(result) - 1) {
+		result = Cat(result, wrap)
+	}
+	return result
+}
+
 // PathExists checks if a given File or Directory exists.
 func PathExists(path string) bool {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
