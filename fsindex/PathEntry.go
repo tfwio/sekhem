@@ -122,9 +122,8 @@ func (p *PathEntry) Refresh(model *Model, counter *(int32), handler *Handlers) {
 						Extension: filepath.Ext(mFullPath),
 						Mod:       fileinfo.ModTime(),
 					}
-					child.Path = util.StripFileExtensionC(
-						model.StripFileExtensionFromPath,
-						util.UnixSlash(util.Cat(model.FauxPath, "/", child.RootedPath(model))))
+					pt := util.UnixSlash(util.Cat(model.FauxPath, "/", child.RootedPath(model)))
+					child.Path = util.StripFileExtensionC(model.StripFileExtensionFromPath, pt)
 
 					p.Files = append(p.Files, child)
 					if handler != nil {

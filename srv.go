@@ -58,9 +58,7 @@ func initializeCli() {
 
 func initialize() {
 
-	serv, tempPath := "v", `multi-media\\public`
-
-	configuration.InitializeDefaults(tempPath, serv)
+	configuration.InitializeDefaults("multi-media\\public", "v")
 	configuration.FromJSON() // loads (or creates conf.json and terminates application)
 
 	gin.SetMode(gin.ReleaseMode)

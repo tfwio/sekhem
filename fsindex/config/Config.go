@@ -60,9 +60,9 @@ func (c *Configuration) GinConfig(mGin *gin.Engine) {
 		p := util.Wrapper("/", "json", filepath.Base(path.Source))
 		m := c.createEntry(path, fsindex.DefaultSettings)
 
-		np := util.Wrapper("/", path.Target, m.Name)
+		np := util.Wrapper("/", strings.Trim(path.Target, "/"), m.Name)
 		if m.Settings.OmitRootNameFromPath {
-			np = util.Wrap(path.Target, "/")
+			np = util.Wrap(strings.Trim(path.Target, "/"), "/")
 		}
 
 		fmt.Printf("  > Target = %-18s, Source = %s\n", np, path.Source)

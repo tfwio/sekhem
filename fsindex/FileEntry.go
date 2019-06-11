@@ -46,7 +46,7 @@ func (f *FileEntry) Rooted(r *Model) string {
 	} else {
 		result = strings.Replace(f.Abs(), r.Abs(), r.Name, -1)
 	}
-	return result
+	return strings.Trim(result, "/")
 }
 
 // RootedPath applies additional filtering on `FileEntry` such as

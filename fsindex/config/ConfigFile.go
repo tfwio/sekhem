@@ -78,26 +78,20 @@ func (c *Configuration) InitializeDefaults(path string, targetPath string) {
 	}
 	c.Locations = []StaticPath{
 		StaticPath{
-			Source:    constImagesSourceDefault,
+			Source:    util.Abs(constImagesSourceDefault),
 			Target:    constImagesTargetDefault,
 			Browsable: true,
 		},
 		StaticPath{
-			Source:    constStaticSourceDefault,
+			Source:    util.Abs(constStaticSourceDefault),
 			Target:    constStaticTargetDefault,
-			Browsable: true,
-		},
-		// FIXME: this particular path is to be associated with indexing.
-		StaticPath{
-			Source:    path,
-			Target:    util.Wrap(targetPath, "/"),
 			Browsable: true,
 		},
 	}
 	c.Indexes = []IndexPath{
 		// FIXME: this particular path is to be associated with indexing.
 		IndexPath{
-			Source:      path,
+			Source:      util.Abs(path),
 			Target:      util.Wrap(targetPath, "/"),
 			Browsable:   true,
 			Servable:    true,
@@ -158,8 +152,7 @@ func (c *Configuration) MapExtensions() {
 
 // SaveJSON writes JSON to `path`.
 func (c *Configuration) SaveJSON(path string) {
-	println(fmt.Sprintf("==> Marshal JSON %s", path))
-	if JSON, E := json.Marshal(c); E == nil {
+	if JSON, E := json.MarshalIndent(c, "", "  "); E == nil {
 		ioutil.WriteFile(path, JSON, 0777)
 	} else {
 		panic(E)
@@ -168,7 +161,6 @@ func (c *Configuration) SaveJSON(path string) {
 
 // LoadJSON reads JSON from `path`.
 func (c *Configuration) LoadJSON(path string) {
-	println(fmt.Sprintf("==> Unmarshal JSON %s", path))
 	data := util.CacheBytes(path)
 	if E := json.Unmarshal(data, c); E != nil {
 		panic(E)
