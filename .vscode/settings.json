@@ -1,0 +1,7 @@
+{
+  "go.toolsEnvVars": {
+    "GOARCH": "amd64",
+    "GO111MODULE": "on",
+  },
+  "go.formatTool": "goimports"
+}
