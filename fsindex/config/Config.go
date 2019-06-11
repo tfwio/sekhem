@@ -57,12 +57,19 @@ func (c *Configuration) GinConfig(mGin *gin.Engine) {
 	println("location indexes")
 	for _, path := range c.Indexes {
 
-		p := util.Wrap(util.Cat("json/", filepath.Base(path.Source)), "/")
-		fmt.Printf("  > Target = %-18s, Source = %s\n", util.Wrap(path.Target, "/"), path.Source)
-		println(fmt.Sprintf("  > %s = %-18s", "JSON", p))
-		mGin.StaticFS(util.Wrap(path.Target, "/"), gin.Dir(util.Abs(path.Source), path.Browsable))
-
+		p := util.Wrapper("/", "json", filepath.Base(path.Source))
 		m := c.createEntry(path, fsindex.DefaultSettings)
+
+		np := util.Wrapper("/", path.Target, m.Name)
+		if m.Settings.OmitRootNameFromPath {
+			np = util.Wrap(path.Target, "/")
+		}
+
+		fmt.Printf("  > Target = %-18s, Source = %s\n", np, path.Source)
+		println(fmt.Sprintf("  > %s = %-18s", "JSON", p))
+
+		mGin.StaticFS(np, gin.Dir(util.Abs(path.Source), path.Browsable))
+
 		buildFileSystemModel(&m)
 		mGin.GET(p, func(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, &m)

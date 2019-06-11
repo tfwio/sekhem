@@ -38,12 +38,25 @@ func (f *FileEntry) GetSHA1() string {
 }
 
 // Rooted returns the FileEntry.FullPath excluding the full root-path with exception to
-// the root-directory name.
+// the root-directory name.  It applies `Settings.OmitRootNameFromPath`.
 func (f *FileEntry) Rooted(r *Model) string {
+	result := ""
 	if r.Settings.OmitRootNameFromPath {
-		return strings.Replace(f.Abs(), r.Abs(), r.Base(), -1)
+		result = strings.Replace(f.Abs(), r.Abs(), r.Base(), -1)
+	} else {
+		result = strings.Replace(f.Abs(), r.Abs(), r.Name, -1)
 	}
-	return strings.Replace(f.Abs(), r.Abs(), r.Name, -1)
+	return result
+}
+
+// RootedPath applies additional filtering on `FileEntry` such as
+// `Settings.UnknownCharsToDash` and `Settings.OmitRootNameFromPath`.
+func (f *FileEntry) RootedPath(r *Model) string {
+	result := f.Rooted(r)
+	if r.Settings.UnknownCharsToDash {
+		result = util.Space2Dash(result)
+	}
+	return result
 }
 
 // Modified gets the file-system modified time.

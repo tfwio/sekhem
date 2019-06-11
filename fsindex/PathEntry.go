@@ -118,11 +118,14 @@ func (p *PathEntry) Refresh(model *Model, counter *(int32), handler *Handlers) {
 						Parent:    p,
 						FullPath:  mFullPath,
 						SHA1:      util.Sha1String(mFullPath),
-						Name:      util.StripFileExtension(filepath.Base(mFullPath)),
+						Name:      util.StripFileExtensionC(model.StripFileExtensionFromName, filepath.Base(mFullPath)),
 						Extension: filepath.Ext(mFullPath),
 						Mod:       fileinfo.ModTime(),
 					}
-					child.Path = util.UnixSlash(util.Cat(model.FauxPath, "/", child.Rooted(model)))
+					child.Path = util.StripFileExtensionC(
+						model.StripFileExtensionFromPath,
+						util.UnixSlash(util.Cat(model.FauxPath, "/", child.RootedPath(model))))
+
 					p.Files = append(p.Files, child)
 					if handler != nil {
 						if handler.ChildFile(model, &child) {
@@ -160,7 +163,7 @@ func (p *PathEntry) Refresh(model *Model, counter *(int32), handler *Handlers) {
 					IsRoot: false,
 				},
 			}
-			child.Path = util.UnixSlash(util.Cat(model.FauxPath, "/", child.Rooted(model)))
+			child.Path = util.UnixSlash(util.Cat(model.FauxPath, "/", child.RootedPath(model)))
 
 			if !child.IsIgnore(model) {
 				child.Refresh(model, counter, handler)

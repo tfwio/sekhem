@@ -7,7 +7,7 @@ type PathSpec struct {
 	FileEntry
 
 	// Indicates a top-level directory
-	IsRoot bool `json:"isroot"`
+	IsRoot bool `json:"-"`
 
 	// Child items
 	Paths []PathEntry `json:"paths,omitempty"`

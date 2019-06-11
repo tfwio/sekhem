@@ -43,13 +43,13 @@ func (m *SimpleModel) ResetMaps() {
 // AddPath is a callback per PathEntry.
 // It adds each PathEntry to a flat (non-hierarchical) map (dictionary).
 func (m *SimpleModel) AddPath(p *Model, c *PathEntry) {
-	m.Path[c.Rooted(p)] = c
+	m.Path[c.RootedPath(p)] = c
 	m.PathSHA1[c.SHA1] = c
 }
 
 // AddFile is a callback per FileEntry.
 // It adds each FileEntry to a flat (non-hierarchical) map (dictionary).
 func (m *SimpleModel) AddFile(p *Model, c *FileEntry) {
-	m.File[c.Rooted(p)] = c
+	m.File[c.RootedPath(p)] = c
 	m.FileSHA1[c.SHA1] = c
 }
