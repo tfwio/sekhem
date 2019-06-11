@@ -23,7 +23,7 @@ type Configuration struct {
 	pathEntry   fsindex.PathEntry
 }
 
-// LoadConfig loads JSON configuration.
+// FromJSON loads JSON configuration.
 func (c *Configuration) FromJSON() {
 	if !util.FileExists(DefaultConfigFile) {
 		if !util.DirectoryExists(constDefaultDataPath) {
@@ -66,7 +66,7 @@ func (c *Configuration) GetPath(more ...string) string {
 }
 
 // InitializeDefaults produces faux configuration settings.
-func (c *Configuration) InitializeDefaults(paths ...string) {
+func (c *Configuration) InitializeDefaults(path string, targetPath string) {
 	// println("==> Configuring")
 	c.Server.initServerConfig()
 	c.Root = RootConfig{
@@ -89,16 +89,16 @@ func (c *Configuration) InitializeDefaults(paths ...string) {
 		},
 		// FIXME: this particular path is to be associated with indexing.
 		StaticPath{
-			Source:    paths[0],
-			Target:    "/v/",
+			Source:    path,
+			Target:    util.Wrap(targetPath, "/"),
 			Browsable: true,
 		},
 	}
 	c.Indexes = []IndexPath{
 		// FIXME: this particular path is to be associated with indexing.
 		IndexPath{
-			Source:      paths[0],
-			Target:      "/v/",
+			Source:      path,
+			Target:      util.Wrap(targetPath, "/"),
 			Browsable:   true,
 			Servable:    true,
 			Extensions:  []string{"Media"},

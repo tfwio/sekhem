@@ -61,17 +61,6 @@ func createPathEntry(path string) fsindex.PathEntry {
 	return pe
 }
 
-// FIXME: `pathIndex[0]` is used (solely).
-func configure(pathIndex ...string) {
-
-	configuration.InitializeDefaults(pathIndex...)
-	configuration.FromJSON() // loads (or creates conf.json and terminates application)
-
-	// TODO: remove this
-	pathEntry = createPathEntry(pathIndex[0])
-	pathEntry.Info()
-}
-
 func main() {
 	initializeCli()
 }
@@ -116,7 +105,7 @@ func (m *SimpleModel) AddFile(p *fsindex.PathEntry, c *fsindex.FileEntry) {
 	m.FileSHA1[c.SHA1] = c
 }
 
-func createIndex() {
+func buildFileSystemModel(path string, spath string) {
 
 	xCounter, fCounter = 0, 0
 
@@ -142,7 +131,7 @@ func createIndex() {
 
 	pathEntry.Refresh(nil, &xCounter, &handler)
 
-	checkSimpleModel(&mdl)
+	// checkSimpleModel(&mdl)
 }
 
 func checkSimpleModel(mdl *SimpleModel) {
@@ -154,7 +143,7 @@ func checkSimpleModel(mdl *SimpleModel) {
 	println("Path Count: ", xCounter)
 	// println("some model: ", (*mdl.Path[`.mmd\THIRD PARTY\relisoft-windows-api-tut\12 olerant.md`]).FullPath)
 	ref1 := &pathEntry.Paths[0].Files[0]
-	println("some model: ", (*ref1).FullPath)
+	println("some model: ", ref1.FullPath)
 	println("parent:", ref1.Parent.FauxPath)
 	// mf := mdl.File[`.mmd\THIRD PARTY\relisoft-windows-api-tut\12 olerant.md`]
 	fmt.Printf("looking in \"%s\" for files...\n", ref1.Parent.Base())
@@ -168,10 +157,10 @@ func initializeCli() {
 	mCli.Authors = []cli.Author{cli.Author{Name: "tfw; et alia" /*, Email: "tfwroble@gmail.com"}, cli.Author{Name: "Et al."*/}}
 	mCli.Version = "v0.0.0"
 	mCli.Copyright = "tfwio.github.com/go-fsindex\n\n   This is free, open-source software.\n   disclaimer: use at own risk."
-	mCli.Action = func(*cli.Context) { initializeApp() }
+	mCli.Action = func(*cli.Context) { initialize() }
 	mCli.Commands = []cli.Command{cli.Command{
 		Name:        "run",
-		Action:      func(*cli.Context) { initializeApp() },
+		Action:      func(*cli.Context) { initialize() },
 		Usage:       "Runs the server.",
 		Description: "Default operation.",
 		Aliases:     []string{"go"},
@@ -193,18 +182,19 @@ func initializeCli() {
 	mCli.Run(os.Args)
 }
 
-func initializeApp() {
+func initialize() {
 
-	gin.SetMode(gin.ReleaseMode)
-	// should be using
+	serv, tempPath := "v", `C:\Users\tfwro\Desktop\DesktopMess\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\downloads`
 
 	println("==> configure")
-	configure(`C:\Users\tfwro\Desktop\DesktopMess\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\downloads`)
 
-	println("==> server setup")
+	configuration.InitializeDefaults(tempPath, serv)
+	configuration.FromJSON() // loads (or creates conf.json and terminates application)
+
 	mGin := gin.Default()
-
-	createIndex()
+	gin.SetMode(gin.ReleaseMode)
+	pathEntry = createPathEntry(tempPath) // pathEntry.Info()
+	buildFileSystemModel(tempPath, serv)
 	configuration.GinConfig(mGin, &pathEntry)
 
 	if configuration.DoTLS() {
@@ -219,20 +209,3 @@ func initializeApp() {
 		}
 	}
 }
-
-const (
-	constServerDefaultHost    = "localhost"
-	constServerDefaultPort    = ":5500"
-	constServerTLSCertDefault = "data\\ia.crt"
-	constServerTLSKeyDefault  = "data\\ia.key"
-	constDefaultDataPath      = "./data"
-	constConfJSONReadSuccess  = "got JSON configuration"
-	constConfJSONReadError    = "Error: failed to read JSON configuration. %s\n"
-	constRootPathDefault      = "/"
-	constStaticSourceDefault  = "public\\static"
-	constStaticTargetDefault  = "/static/"
-	constImagesSourceDefault  = "public\\images"
-	constImagesTargetDefault  = "/images/"
-	constExtDefaultMedia      = ".mp4,.m4a,.mp3"
-	constExtDefaultMMD        = ".md,.mmd"
-)
