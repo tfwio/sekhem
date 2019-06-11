@@ -13,16 +13,18 @@ import (
 
 // Configuration is for JSON i/o.
 type Configuration struct {
-	Server     Server             `json:"serv"`
-	Root       RootConfig         `json:"root"`
-	Locations  []StaticPath       `json:"stat"`
-	Indexes    []IndexPath        `json:"indx,omitempty"`
-	Extensions []fsindex.FileSpec `json:"spec,omitempty"`
-	indexPath  string
+	Server      Server              `json:"serv"`
+	Root        RootConfig          `json:"root"`
+	Locations   []StaticPath        `json:"stat"`
+	Indexes     []IndexPath         `json:"indx,omitempty"`
+	Extensions  []fsindex.FileSpec  `json:"spec,omitempty"`
+	PathEntries []fsindex.PathEntry `json:"-"`
+	indexPath   string
+	pathEntry   fsindex.PathEntry
 }
 
 // LoadConfig loads JSON configuration.
-func (c *Configuration) LoadConfig() {
+func (c *Configuration) FromJSON() {
 	if !util.FileExists(DefaultConfigFile) {
 		if !util.DirectoryExists(constDefaultDataPath) {
 			os.Mkdir(constDefaultDataPath, 0777)
@@ -52,16 +54,19 @@ func (c *Configuration) DefaultFile() string {
 	return util.Abs(util.Cat(c.Root.Directory, "\\", c.Root.Default))
 }
 
-func (c *Configuration) getBasePath() string {
+// GetBasePath returns the server's base path; e.g. `"http://localhost:5500"`
+func (c *Configuration) GetBasePath() string {
 	return fmt.Sprintf(`%s://%s%s`, util.IIF(c.Server.TLS, "https", "http"), c.Server.Host, c.Server.Port)
 }
 
-func (c *Configuration) getPath(more ...string) string {
-	return util.Cat(c.getBasePath(), "/", strings.Join(more, "/"))
+// GetPath appends `more` to the default path (see `GetBasePath`).
+// e.g. `"http://localhost:5500/<...more>"`
+func (c *Configuration) GetPath(more ...string) string {
+	return util.Cat(c.GetBasePath(), "/", strings.Join(more, "/"))
 }
 
 // InitializeDefaults produces faux configuration settings.
-func (c *Configuration) InitializeDefaults() {
+func (c *Configuration) InitializeDefaults(paths ...string) {
 	// println("==> Configuring")
 	c.Server.initServerConfig()
 	c.Root = RootConfig{
@@ -84,7 +89,7 @@ func (c *Configuration) InitializeDefaults() {
 		},
 		// FIXME: this particular path is to be associated with indexing.
 		StaticPath{
-			Source:    "C:\\Users\\tfwro\\Desktop\\DesktopMess\\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\\downloads",
+			Source:    paths[0],
 			Target:    "/v/",
 			Browsable: true,
 		},
@@ -92,7 +97,7 @@ func (c *Configuration) InitializeDefaults() {
 	c.Indexes = []IndexPath{
 		// FIXME: this particular path is to be associated with indexing.
 		IndexPath{
-			Source:      "C:\\Users\\tfwro\\Desktop\\DesktopMess\\ytdl_util-0.1.2.1-dotnet-client35-anycpu-win64\\downloads",
+			Source:      paths[0],
 			Target:      "/v/",
 			Browsable:   true,
 			Servable:    true,
@@ -111,8 +116,8 @@ func (c *Configuration) InitializeDefaults() {
 			Extensions: strings.Split(constExtDefaultMMD, ","),
 		},
 	}
-	// c.configInfo()
-	c.indexPath = c.getPath(c.Server.Path)
+	// c.info()
+	c.indexPath = c.GetPath(c.Server.Path)
 }
 
 // GetFilter uses the dictionary map to return the applicable `[]FileSpec`.
@@ -126,11 +131,15 @@ func (c *Configuration) GetFilter(extensions []string) []fsindex.FileSpec {
 	return result
 }
 
-func (c *Configuration) configInfo() {
+func (c *Configuration) info() {
 	println("Configuration Information: Root")
 	println("=================================")
 	c.Server.info()
 	c.Root.info()
+	c.locationInfo()
+}
+
+func (c *Configuration) locationInfo() {
 	for _, loc := range c.Locations {
 		println("==> Location")
 		println(fmt.Sprintf("----> Source    = %s", loc.Source))

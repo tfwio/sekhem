@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,11 +20,7 @@ var (
 	configuration config.Configuration
 	mCli          cli.App
 
-	serverRoot string // e.g. https://tfw.io:5500
-	indexPath  string // e.g. https://tfw.io:5500/[path] (or <serverRoot>/<path>)
-
-	pathEntry   fsindex.PathEntry
-	pathEntries []fsindex.PathEntry
+	pathEntry fsindex.PathEntry
 
 	xCounter  int32
 	fCounter  int32
@@ -47,66 +42,38 @@ func (m *SimpleModel) create() {
 	m.PathSHA1 = make(map[string]*fsindex.PathEntry)
 }
 
-// FIXME: `pathIndex[0]` is used (solely).
-func configure(pathIndex ...string) {
-	configuration.InitializeDefaults()
-
-	// some default values
-	configuration.Server.TLS = len(os.Args) == 2 && os.Args[1] == "tls"
-
-	serverRoot = fmt.Sprintf(`%s://%s%s`, util.IIF(configuration.Server.TLS, "https", "http"), constServerDefaultPort, "tfw.io")
-	// indexPath = fmt.Sprintf(`%s/%s`, serverRoot, "v")
-	indexPath = fmt.Sprintf(`%s/%s`, serverRoot, "v")
-
-	configuration.LoadConfig() // loads (or creates conf.json and terminates application)
-	indexPath = fmt.Sprintf(`%s://%s%s/%s`, util.IIF(configuration.Server.TLS, "https", "http"), configuration.Server.Host, configuration.Server.Port, configuration.Server.Path)
-
-	// TODO: remove this
-	println("- path for indexed files: ", indexPath)
-	pathEntry = fsindex.PathEntry{
+func createPathEntry(path string) fsindex.PathEntry {
+	println("- path for indexed files: ", configuration.GetPath("v"))
+	// configure, createIndex, checkSimpleModel
+	pe := fsindex.PathEntry{
 		PathSpec: fsindex.PathSpec{
 			FileEntry: fsindex.FileEntry{
 				Parent:   nil,
-				Name:     util.AbsBase(pathIndex[0]),
-				FullPath: util.Abs(pathIndex[0]),
-				SHA1:     util.Sha1String(pathIndex[0]),
+				Name:     util.AbsBase(path),
+				FullPath: util.Abs(path),
+				SHA1:     util.Sha1String(path),
 			},
 			IsRoot: true},
-		FauxPath:    indexPath,
+		FauxPath:    configuration.GetPath("v"),
 		FileFilter:  configuration.Extensions,
 		IgnorePaths: []string{},
 	}
-	println("- check name:", pathEntry.Name)
-	println("- check sha1:", pathEntry.SHA1)
-	println("- check path:", pathEntry.FauxPath)
+	return pe
+}
 
-	// TODO: check each Source path in configuration.Indexes
-	pathEntries = make([]fsindex.PathEntry, len(configuration.Indexes))
-	for i, p := range configuration.Indexes {
-		pathEntries[i].PathSpec = fsindex.PathSpec{
-			FileEntry: fsindex.FileEntry{
-				Parent:   nil,
-				Name:     util.AbsBase(util.Abs(p.Source)),
-				FullPath: util.Abs(p.Source),
-				SHA1:     util.Sha1String(util.Abs(p.Source)),
-			},
-			IsRoot: true}
-		pathEntries[i].FileFilter = configuration.GetFilter(p.Extensions)
-		pathEntries[i].FauxPath = util.Cat(serverRoot, p.Alias)
-		pathEntries[i].IgnorePaths = p.IgnorePaths
-		print(fmt.Sprintf("- JSON index: %s\n", util.AbsBase(util.Abs(p.Source))))
-		for _, x := range pathEntries[i].FileFilter {
-			print(fmt.Sprintf("  - got extension: %s\n", x.Name))
-		}
-	}
+// FIXME: `pathIndex[0]` is used (solely).
+func configure(pathIndex ...string) {
+
+	configuration.InitializeDefaults(pathIndex...)
+	configuration.FromJSON() // loads (or creates conf.json and terminates application)
+
+	// TODO: remove this
+	pathEntry = createPathEntry(pathIndex[0])
+	pathEntry.Info()
 }
 
 func main() {
 	initializeCli()
-}
-
-func serveJSONPathEntry(pContext *gin.Context) {
-	pContext.JSON(http.StatusOK, &pathEntry)
 }
 
 func makeMdl() SimpleModel {
@@ -172,6 +139,7 @@ func createIndex() {
 			return false
 		},
 	}
+
 	pathEntry.Refresh(nil, &xCounter, &handler)
 
 	checkSimpleModel(&mdl)
@@ -236,39 +204,8 @@ func initializeApp() {
 	println("==> server setup")
 	mGin := gin.Default()
 
-	// these files are all stored in the public directory.
-	// they are the only files we're serving specifically in
-	// that directory.
-
-	DefaultFile := util.Abs(util.Cat(configuration.Root.Directory, "\\", configuration.Root.Default))
-	// configuration.configInfo()
-
-	// println("==> server setup: configuration.Root.AliasDefault")
-	println("alias-default")
-	for _, rootEntry := range configuration.Root.AliasDefault {
-		target := util.Cat(configuration.Root.Path, rootEntry)
-		mGin.StaticFile(target, DefaultFile)
-		fmt.Printf("  ? Target = %s, Source = %s\n", target, configuration.DefaultFile())
-	}
-	println("root-files")
-	for _, rootEntry := range configuration.Root.Files {
-		target := util.Cat(configuration.Root.Path, rootEntry)
-		source := util.Abs(util.Cat(configuration.Root.Directory, "\\", rootEntry))
-		mGin.StaticFile(target, source)
-		fmt.Printf("  > Target = %s, Source = %s\n", target, source)
-	}
-	println("locations")
-	for _, tgt := range configuration.Locations {
-		println("- serving path:", tgt.Target, "from", util.Abs(tgt.Source))
-		mGin.StaticFS(tgt.Target, gin.Dir(util.Abs(tgt.Source), tgt.Browsable))
-		fmt.Printf("  > Target = %s, Source = %s\n", tgt.Target, tgt.Source)
-	}
-	fmt.Printf("- default: Target = %s, Source =  %s\n", configuration.Root.Path, DefaultFile)
-	mGin.StaticFile(constRootPathDefault, DefaultFile)
-
-	mGin.GET("/json/", serveJSONPathEntry)
-
 	createIndex()
+	configuration.GinConfig(mGin, &pathEntry)
 
 	if configuration.DoTLS() {
 		println("- use tls")
@@ -291,17 +228,6 @@ const (
 	constDefaultDataPath      = "./data"
 	constConfJSONReadSuccess  = "got JSON configuration"
 	constConfJSONReadError    = "Error: failed to read JSON configuration. %s\n"
-	constMessageWroteJSON     = `
-We've exported a default data/conf.json for your editing.
-
-Modify the file per your preferences.
-
-[terminating application]
-`
-	constRootAliasDefault     = "home,index.htm,index.html,index,default,default.htm"
-	constRootFilesDefault     = "json.json,bundle.js,favicon.ico"
-	constRootIndexDefault     = "index.html"
-	constRootDirectoryDefault = ".\\public"
 	constRootPathDefault      = "/"
 	constStaticSourceDefault  = "public\\static"
 	constStaticTargetDefault  = "/static/"

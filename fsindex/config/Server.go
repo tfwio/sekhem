@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"os"
 
 	"tfw.io/Go/fsindex/util"
 )
@@ -36,7 +35,7 @@ func (s *Server) hasCert() bool {
 func (s *Server) initServerConfig() {
 	s.Host = constServerDefaultHost
 	s.Port = constServerDefaultPort
-	s.TLS = len(os.Args) == 2 && os.Args[1] == "tls"
+	s.TLS = UseTLS
 	s.Crt = constServerTLSCertDefault
 	s.Key = constServerTLSKeyDefault
 	s.Path = "v"

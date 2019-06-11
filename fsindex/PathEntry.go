@@ -20,6 +20,16 @@ type PathEntry struct {
 	FauxPath string `json:"uri,omitempty"`
 }
 
+func (p *PathEntry) Info() {
+	println("- check name:", p.Name)
+	println("- check sha1:", p.SHA1)
+	println("- check path:", p.FauxPath)
+	// print(fmt.Sprintf("- JSON index: %s\n", util.AbsBase(util.Abs(p.Source))))
+	for _, x := range p.FileFilter {
+		print(fmt.Sprintf("  - got extension: %s\n", x.Name))
+	}
+}
+
 // Top gets the top-most, root path entry.
 func (p *PathEntry) Top() *PathEntry {
 	mRef := p
