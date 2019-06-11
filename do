@@ -72,8 +72,8 @@ do_build(){
     case "${i}" in
       build)
         echo building
-        echo go build -o srv-${GOARCH}.exe ${buildmod} srv.go
-        go build -o srv-${GOARCH}.exe ${buildmod} srv.go
+        echo go build -o srv-${GOARCH}.exe ${buildmod} *.go
+        go build -o srv-${GOARCH}.exe ${buildmod} *.go
         ;;
     esac
   done
