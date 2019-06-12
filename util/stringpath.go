@@ -2,38 +2,18 @@ package util
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"strings"
 )
 
 const (
 	resErrorCacheFile = "- error: cache file [%s]\n"
 )
-
-// Wrapper concatenates text and wraps it like `Wrap` does with `sep`-arator.
-func Wrapper(sep string, text ...string) string {
-	return Wrap(strings.Join(text, sep), sep)
-}
-
-// Wrap wraps text with `wrap`, written for converting "v" to "/v/".
-// see: https://blog.golang.org/strings
-func Wrap(text string, wrap string) string {
-	result := text
-	if strings.Index(result, wrap) != 0 {
-		result = Cat(wrap, result)
-	}
-	if strings.LastIndex(result, wrap) != (len(result) - 1) {
-		result = Cat(result, wrap)
-	}
-	return result
-}
 
 // PathExists checks if a given File or Directory exists.
 func PathExists(path string) bool {
@@ -129,72 +109,18 @@ func CacheBytes(path string) []byte {
 	return nil
 }
 
-// StrInt64 string to int helper
-func StrInt64(pStrInput string) int64 {
-	var err error
-	var fpoop int64
-	if fpoop, err = strconv.ParseInt(pStrInput, 10, 32); err != nil {
-		return 0
-	}
-	return int64(fpoop)
-}
-
-// TrimUnixSlash trims left and right forward-slashes from input string.
-func TrimUnixSlash(pStrInput string) string {
-	return TrimUnixSlashRight(TrimUnixSlashLeft(pStrInput))
-}
-
-// TrimUnixSlashLeft trims leftmost forward-slash from input string.
-func TrimUnixSlashLeft(pStrInput string) string {
-	return strings.TrimLeft(pStrInput, "/")
-}
-
-// TrimUnixSlashRight trims right forward-slash from input string.
-func TrimUnixSlashRight(pStrInput string) string {
-	return strings.TrimRight(pStrInput, "/")
-}
-
-// MultiReplace converts whatever to whatever.
-// This is used to convert, for example, various characters (`find`) to a dash.
-func MultiReplace(input string, replace string, find ...string) string {
-	haystack := input
-	for _, needle := range find {
-		haystack = strings.Replace(haystack, needle, replace, -1)
-	}
-	return haystack
-}
-
-// Space2Dash converts or replaces all spaces in a string with a small-dash.
-func Space2Dash(pStrInput string) string {
-	return strings.Replace(pStrInput, " ", "-", -1)
-}
-
 // UnixSlash converts all backslash to forward-slash.
-func UnixSlash(instr string) string {
-	return strings.Replace(instr, "\\", "/", -1)
+func UnixSlash(path string) string {
+	return strings.Replace(path, "\\", "/", -1)
 }
 
 // OSSlash converts all backslash to forward-slash (if OS is not windows).
 // It'd probably be best to just use your standard `fileutil.Abs(…)`.
-func OSSlash(instr string) string {
+func OSSlash(path string) string {
 	if runtime.GOOS == "windows" {
-		return strings.Replace(instr, "\\", "/", -1)
+		return strings.Replace(path, "\\", "/", -1)
 	}
-	return instr
-}
-
-// StrTransformLiteral takes a literal string stuff like `EOL` and asserts
-// literal code(s) such as `\n` and takes a measure or two to clean up the
-// string to something a bit more normative.  You might say, this makes
-// a string suitable for a JSON value ---might not.
-func StrTransformLiteral(input string) (str string) {
-	str = strings.Replace(input, `\r\n`, "\n", -1)
-	str = strings.Replace(str, `\n`, "\n", -1)
-	str = strings.Replace(str, `\t`, "	", -1)
-	str = strings.Replace(str, `\\`, `\`, -1)
-	str = strings.Replace(str, `\"`, `"`, -1)
-	str = strings.Trim(str, "\"")
-	return
+	return path
 }
 
 // ConvertTransient What does this actually do?
@@ -214,18 +140,6 @@ func ConvertTransient(pInput string) string {
 //	fmt.Printf("%x\n", bs)
 //}
 
-// Sha1String just gets SHA1.
-func Sha1String(pStrData string) string {
-	hasher := sha1.New()
-	hasher.Write([]byte(pStrData))
-	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
-}
-
-// ToBase64 gets base-64 url-string
-func ToBase64(input string) string {
-	return base64.URLEncoding.EncodeToString([]byte(input))
-}
-
 // FromBase64e gets base-64 url-string
 func FromBase64e(input string) ([]byte, error) {
 	return base64.URLEncoding.DecodeString(input)
@@ -236,13 +150,6 @@ func FromBase64(input string) []byte {
 	result, _ := base64.URLEncoding.DecodeString(input)
 	return result
 }
-
-// UNUSED
-// func sha1Bytes(pStrData string) []byte {
-// 	hasher := sha1.New()
-// 	hasher.Write([]byte(pStrData))
-// 	return hasher.Sum(nil)
-// }
 
 // CatArrayPad - Concatenate a string
 // were padding the buffer here with a single char.
