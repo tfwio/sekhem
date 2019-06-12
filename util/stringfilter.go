@@ -5,7 +5,7 @@ import "strings"
 // StrTransformLiteral takes a literal string stuff like `EOL` and asserts
 // literal code(s) such as `\n` and takes a measure or two to clean up the
 // string to something a bit more normative.  You might say, this makes
-// a string suitable for a JSON value ---might not.
+// a string suitable *from* JSON value ---might not aside from char-codes.
 func StrTransformLiteral(text string) (str string) {
 	str = strings.Replace(text, `\r\n`, "\n", -1)
 	str = strings.Replace(str, `\n`, "\n", -1)

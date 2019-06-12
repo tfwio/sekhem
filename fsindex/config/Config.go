@@ -57,28 +57,29 @@ func (c *Configuration) GinConfig(mGin *gin.Engine) {
 	println("location indexes")
 	for _, path := range c.Indexes {
 
-		p := util.Wrapper("/", "json", filepath.Base(path.Source))
-		m := c.createEntry(path, fsindex.DefaultSettings)
+		jsonpath := util.WReap("/", "json", filepath.Base(path.Source))
+		modelpath := util.WReap("/", path.Target)
 
-		np := util.Wrapper("/", strings.Trim(path.Target, "/"), m.Name)
-		if m.Settings.OmitRootNameFromPath {
-			np = util.Wrap(strings.Trim(path.Target, "/"), "/")
+		model := c.createEntry(path, fsindex.DefaultSettings)
+
+		if !model.Settings.OmitRootNameFromPath {
+			modelpath = util.WReap("/", path.Target, model.Name)
 		}
 
-		fmt.Printf("  > Target = %-18s, Source = %s\n", np, path.Source)
-		println(fmt.Sprintf("  > %s = %-18s", "JSON", p))
+		println(fmt.Sprintf("JSON: %s", c.GetPath(jsonpath)))
+		fmt.Printf("  > Target = %-18s, Source = %s\n", modelpath, path.Source)
 
-		mGin.StaticFS(np, gin.Dir(util.Abs(path.Source), path.Browsable))
+		mGin.StaticFS(modelpath, gin.Dir(util.Abs(path.Source), path.Browsable))
 
-		buildFileSystemModel(&m)
-		mGin.GET(p, func(ctx *gin.Context) {
-			ctx.JSON(http.StatusOK, &m)
+		buildFileSystemModel(&model)
+		mGin.GET(jsonpath, func(ctx *gin.Context) {
+			ctx.JSON(http.StatusOK, &model)
 		})
 	}
 }
 
 func (c *Configuration) createEntry(path IndexPath, settings fsindex.Settings) fsindex.Model {
-	println("- path for indexed files: ", c.GetPath(path.Target))
+
 	// configure, createIndex, checkSimpleModel
 	pe := fsindex.Model{
 		PathEntry: fsindex.PathEntry{
@@ -148,8 +149,8 @@ func checkSimpleModel(mdl *fsindex.SimpleModel, pathEntry *fsindex.Model) {
 const (
 	constServerDefaultHost    = "localhost"
 	constServerDefaultPort    = ":5500"
-	constServerTLSCertDefault = "data\\ia.crt"
-	constServerTLSKeyDefault  = "data\\ia.key"
+	constServerTLSCertDefault = "data\\cert.pem"
+	constServerTLSKeyDefault  = "data\\key.pem"
 	constDefaultDataPath      = "./data"
 	constConfJSONReadSuccess  = "got JSON configuration"
 	constConfJSONReadError    = "Error: failed to read JSON configuration. %s\n"

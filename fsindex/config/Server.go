@@ -8,12 +8,12 @@ import (
 
 // Server info for JSON i/o.
 type Server struct {
-	Host string `json:"host"`
 	Port string `json:"port"`
-	TLS  bool   `json:"tls"` // default=false unless `os.Args[1] == "tls"` or specified in `[data/]config.json`.
-	Key  string `json:"key,omitempty"`
-	Crt  string `json:"crt,omitempty"`
+	Host string `json:"host"`
 	Path string `json:"path"`
+	TLS  bool   `json:"tls"` // default=false unless `os.Args[1] == "tls"` or specified in `[data/]config.json`.
+	Crt  string `json:"crt,omitempty"`
+	Key  string `json:"key,omitempty"`
 }
 
 func (s *Server) info() {
@@ -26,10 +26,10 @@ func (s *Server) info() {
 	println(fmt.Sprintf("--> Path  = %s", s.Path))
 }
 func (s *Server) hasKey() bool {
-	return util.FileExists(constServerTLSKeyDefault)
+	return util.FileExists(s.Key)
 }
 func (s *Server) hasCert() bool {
-	return util.FileExists(constServerTLSCertDefault)
+	return util.FileExists(s.Crt)
 }
 
 func (s *Server) initServerConfig() {

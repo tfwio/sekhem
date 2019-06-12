@@ -122,6 +122,7 @@ func (p *PathEntry) Refresh(model *Model, counter *(int32), handler *Handlers) {
 						Extension: filepath.Ext(mFullPath),
 						Mod:       fileinfo.ModTime(),
 					}
+
 					pt := util.UnixSlash(util.Cat(model.FauxPath, "/", child.RootedPath(model)))
 					child.Path = util.StripFileExtensionC(model.StripFileExtensionFromPath, pt)
 

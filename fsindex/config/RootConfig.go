@@ -5,11 +5,11 @@ import "fmt"
 // RootConfig is used to tell the server what files are to
 // be served in the root directory.
 type RootConfig struct {
-	Path         string   `json:"path"`
+	Path         string   `json:"path"` // "/"
 	Directory    string   `json:"dir"`
 	Files        []string `json:"files"`
 	AliasDefault []string `json:"alias"`
-	Default      string   `json:"default"`
+	Default      string   `json:"default"` // Default document. default=index.html
 }
 
 func (r *RootConfig) info() {

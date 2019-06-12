@@ -13,22 +13,20 @@ import (
 
 // Configuration is for JSON i/o.
 type Configuration struct {
-	Server      Server              `json:"serv"`
-	Root        RootConfig          `json:"root"`
-	Locations   []StaticPath        `json:"stat"`
-	Indexes     []IndexPath         `json:"indx,omitempty"`
-	Extensions  []fsindex.FileSpec  `json:"spec,omitempty"`
-	PathEntries []fsindex.PathEntry `json:"-"`
-	indexPath   string
-	pathEntry   fsindex.PathEntry
+	Server     `json:"serv"`
+	Root       RootConfig         `json:"root"`
+	Locations  []StaticPath       `json:"stat"`
+	Indexes    []IndexPath        `json:"indx,omitempty"`
+	Extensions []fsindex.FileSpec `json:"spec,omitempty"`
+	indexPath  string             // assigned; not used.
 }
 
 // FromJSON loads JSON configuration.
 func (c *Configuration) FromJSON() {
 	if !util.FileExists(DefaultConfigFile) {
-		if !util.DirectoryExists(constDefaultDataPath) {
-			os.Mkdir(constDefaultDataPath, 0777)
-		}
+		// if !util.DirectoryExists(constDefaultDataPath) {
+		// 	os.Mkdir(constDefaultDataPath, constFileFolderAccessPrivelage)
+		// }
 		c.SaveJSON(DefaultConfigFile)
 		println(constMessageWroteJSON)
 		os.Exit(1)
@@ -62,7 +60,7 @@ func (c *Configuration) GetBasePath() string {
 // GetPath appends `more` to the default path (see `GetBasePath`).
 // e.g. `"http://localhost:5500/<...more>"`
 func (c *Configuration) GetPath(more ...string) string {
-	return util.Cat(c.GetBasePath(), "/", strings.Join(more, "/"))
+	return util.Cat(c.GetBasePath(), "/", util.TrimJoin("/", more...))
 }
 
 // InitializeDefaults produces faux configuration settings.
@@ -78,12 +76,12 @@ func (c *Configuration) InitializeDefaults(path string, targetPath string) {
 	}
 	c.Locations = []StaticPath{
 		StaticPath{
-			Source:    util.Abs(constImagesSourceDefault),
+			Source:    constImagesSourceDefault,
 			Target:    constImagesTargetDefault,
 			Browsable: true,
 		},
 		StaticPath{
-			Source:    util.Abs(constStaticSourceDefault),
+			Source:    constStaticSourceDefault,
 			Target:    constStaticTargetDefault,
 			Browsable: true,
 		},
@@ -91,8 +89,8 @@ func (c *Configuration) InitializeDefaults(path string, targetPath string) {
 	c.Indexes = []IndexPath{
 		// FIXME: this particular path is to be associated with indexing.
 		IndexPath{
-			Source:      util.Abs(path),
-			Target:      util.Wrap(targetPath, "/"),
+			Source:      path,
+			Target:      util.Wrapper("/", targetPath),
 			Browsable:   true,
 			Servable:    true,
 			Extensions:  []string{"Media"},
@@ -111,7 +109,19 @@ func (c *Configuration) InitializeDefaults(path string, targetPath string) {
 		},
 	}
 	// c.info()
-	c.indexPath = c.GetPath(c.Server.Path)
+	c.indexPath = c.GetPath(c.Server.Path) // asssigned, not used.
+	c.Prepare()
+}
+
+// Prepare sorts out ugly configuration settings.
+func (c *Configuration) Prepare() {
+	c.Path = util.WReap("/", c.Path)
+	for _, l := range c.Locations {
+		l.Target = util.WReap("/", l.Target)
+	}
+	for _, i := range c.Indexes {
+		i.Target = util.WReap("/", i.Target)
+	}
 }
 
 // GetFilter uses the dictionary map to return the applicable `[]FileSpec`.
@@ -152,8 +162,8 @@ func (c *Configuration) MapExtensions() {
 
 // SaveJSON writes JSON to `path`.
 func (c *Configuration) SaveJSON(path string) {
-	if JSON, E := json.MarshalIndent(c, "", "  "); E == nil {
-		ioutil.WriteFile(path, JSON, 0777)
+	if JSON, E := json.MarshalIndent(c, "", "\t"); E == nil {
+		ioutil.WriteFile(path, JSON, constIOAccess)
 	} else {
 		panic(E)
 	}
@@ -166,3 +176,5 @@ func (c *Configuration) LoadJSON(path string) {
 		panic(E)
 	}
 }
+
+const constIOAccess = 0600 // 0777
