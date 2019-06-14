@@ -2,7 +2,6 @@ package util
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -139,17 +138,6 @@ func ConvertTransient(pInput string) string {
 //	fmt.Println(s)
 //	fmt.Printf("%x\n", bs)
 //}
-
-// FromBase64e gets base-64 url-string
-func FromBase64e(input string) ([]byte, error) {
-	return base64.URLEncoding.DecodeString(input)
-}
-
-// FromBase64 gets base-64 url-string; ignores error.
-func FromBase64(input string) []byte {
-	result, _ := base64.URLEncoding.DecodeString(input)
-	return result
-}
 
 // CatArrayPad - Concatenate a string
 // were padding the buffer here with a single char.
