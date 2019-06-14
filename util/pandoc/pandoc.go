@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 
-	"tfw.io/Go/go-mmd-fs/x/util"
+	"tfw.io/Go/fsindex/util"
 )
 
 // Wrapper wraps pandoc of course.
