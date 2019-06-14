@@ -103,9 +103,9 @@ func (p *PathEntry) Refresh(model *Model, counter *(int32), handler *Handlers) {
 	// FILE PATHS
 	for _, mFullPath := range mPaths {
 
-		fileinfo, err := os.Stat(mFullPath)
-		if os.IsNotExist(err) {
-			fmt.Println("Error reading file")
+		fileinfo, _ := os.Stat(mFullPath)
+		if !util.PathExists(mFullPath) {
+			fmt.Println(fmt.Sprintf(permErrorPath, mFullPath))
 			return
 		}
 
@@ -142,9 +142,9 @@ func (p *PathEntry) Refresh(model *Model, counter *(int32), handler *Handlers) {
 	// DIRECTORY PATHS
 	for _, mFullPath := range mPaths {
 
-		fileinfo, err := os.Stat(mFullPath)
-		if os.IsNotExist(err) {
-			fmt.Println("Error reading file")
+		fileinfo, _ := os.Stat(mFullPath)
+		if !util.PathExists(mFullPath) {
+			fmt.Println(fmt.Sprintf(permErrorPath, mFullPath))
 			return
 		}
 
@@ -173,3 +173,7 @@ func (p *PathEntry) Refresh(model *Model, counter *(int32), handler *Handlers) {
 		}
 	}
 }
+
+const (
+	permErrorPath = "Refresh(path); Error reading path (lacking permissions?): %s"
+)

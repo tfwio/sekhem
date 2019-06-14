@@ -70,9 +70,9 @@ func (p *PathEntry) RefreshCB(rootPathEntry *Model, counter *(int32), cbPath *CB
 	// FILE PATHS
 	for _, mFullPath := range mPaths {
 
-		fileinfo, err := os.Stat(mFullPath)
-		if os.IsNotExist(err) {
-			fmt.Println("Error reading file")
+		fileinfo, _ := os.Stat(mFullPath)
+		if !util.PathExists(mFullPath) {
+			fmt.Println(fmt.Sprintf(permErrorPath, mFullPath))
 			return
 		}
 
@@ -106,9 +106,9 @@ func (p *PathEntry) RefreshCB(rootPathEntry *Model, counter *(int32), cbPath *CB
 	// DIRECTORY PATHS
 	for _, mFullPath := range mPaths {
 
-		fileinfo, err := os.Stat(mFullPath)
-		if os.IsNotExist(err) {
-			fmt.Println("Error reading file")
+		fileinfo, _ := os.Stat(mFullPath)
+		if !util.PathExists(mFullPath) {
+			fmt.Println(fmt.Sprintf(permErrorPath, mFullPath))
 			return
 		}
 
