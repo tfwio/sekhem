@@ -12,17 +12,15 @@ import (
 )
 
 var (
-	// UseTLS — you know.
-	UseTLS = false
-	// DefaultConfigFile — you know.
-	DefaultConfigFile = "data/conf.json"
+	UseTLS            = false            // UseTLS — you know.
+	DefaultConfigFile = "data/conf.json" // DefaultConfigFile — you know.
 	extMap            map[string]*fsindex.FileSpec
 	xCounter          int32
 	fCounter          int32
 )
 
 // GinConfig configures gin.Engine.
-func (c *Configuration) GinConfig(mGin *gin.Engine) {
+func (c *Configuration) GinConfig(router *gin.Engine) {
 
 	// these files are all stored in the public directory.
 	// they are the only files we're serving specifically in
@@ -31,12 +29,12 @@ func (c *Configuration) GinConfig(mGin *gin.Engine) {
 	DefaultFile := util.Abs(util.Cat(c.Root.Directory, "\\", c.Root.Default))
 
 	fmt.Printf("default\n  > Target = %-18s, Source =  %s\n", c.Root.Path, DefaultFile)
-	mGin.StaticFile(c.Root.Path, DefaultFile)
+	router.StaticFile(c.Root.Path, DefaultFile)
 
 	println("alias-default")
 	for _, rootEntry := range c.Root.AliasDefault {
 		target := util.Cat(c.Root.Path, rootEntry)
-		mGin.StaticFile(target, DefaultFile)
+		router.StaticFile(target, DefaultFile)
 		fmt.Printf("  > Target = %-18s, Source = %s\n", target, c.DefaultFile())
 	}
 
@@ -44,38 +42,39 @@ func (c *Configuration) GinConfig(mGin *gin.Engine) {
 	for _, rootEntry := range c.Root.Files {
 		target := util.Cat(c.Root.Path, rootEntry)
 		source := util.Abs(util.Cat(c.Root.Directory, "\\", rootEntry))
-		mGin.StaticFile(target, source)
+		router.StaticFile(target, source)
 		fmt.Printf("  > Target = %-18s, Source = %s\n", target, source)
 	}
 
 	println("locations")
 	for _, tgt := range c.Locations {
-		mGin.StaticFS(tgt.Target, gin.Dir(util.Abs(tgt.Source), tgt.Browsable))
+		router.StaticFS(tgt.Target, gin.Dir(util.Abs(tgt.Source), tgt.Browsable))
 		fmt.Printf("  > Target = %-18s, Source = %s\n", tgt.Target, tgt.Source)
 	}
 
 	println("location indexes")
 	for _, path := range c.Indexes {
 
-		jsonpath := util.WReap("/", "json", filepath.Base(path.Source))
+		jsonpath := util.WReap("/", "json", util.AbsBase(path.Source))
 		modelpath := util.WReap("/", path.Target)
 
+		fmt.Printf("  > Target = %-18s, json = %s,  Source = %s\n", modelpath, c.GetPath(jsonpath), path.Source)
 		model := c.createEntry(path, fsindex.DefaultSettings)
-
 		if !model.Settings.OmitRootNameFromPath {
 			modelpath = util.WReap("/", path.Target, model.Name)
 		}
 
-		println(fmt.Sprintf("JSON: %s", c.GetPath(jsonpath)))
-		fmt.Printf("  > Target = %-18s, Source = %s\n", modelpath, path.Source)
+		if path.Servable {
+			router.StaticFS(modelpath, gin.Dir(util.Abs(path.Source), path.Browsable))
+		}
 
-		mGin.StaticFS(modelpath, gin.Dir(util.Abs(path.Source), path.Browsable))
-
-		buildFileSystemModel(&model)
-		mGin.GET(jsonpath, func(ctx *gin.Context) {
-			ctx.JSON(http.StatusOK, &model)
-		})
+		router.GET(jsonpath, func(ctx *gin.Context) { ctx.JSON(http.StatusOK, &model) })
 	}
+
+	println("/tag/ handler")
+	router.GET("/tag/:route/*action", func(g *gin.Context) {
+		TagHandler(c, g)
+	})
 }
 
 func (c *Configuration) createEntry(path IndexPath, settings fsindex.Settings) fsindex.Model {
@@ -164,11 +163,11 @@ Modify the file per your preferences.
 	constRootAliasDefault     = "home,index.htm,index.html,index,default,default.htm"
 	constRootFilesDefault     = "json.json,bundle.js,favicon.ico"
 	constRootIndexDefault     = "index.html"
-	constRootDirectoryDefault = ".\\public"
+	constRootDirectoryDefault = "public"
 	constRootPathDefault      = "/"
-	constStaticSourceDefault  = "public\\static"
+	constStaticSourceDefault  = "public/static"
 	constStaticTargetDefault  = "/static/"
-	constImagesSourceDefault  = "public\\images"
+	constImagesSourceDefault  = "public/images"
 	constImagesTargetDefault  = "/images/"
 	constExtDefaultMedia      = ".mp4,.m4a,.mp3"
 	constExtDefaultMMD        = ".md,.mmd"
