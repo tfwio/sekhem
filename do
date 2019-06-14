@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 
 # fyi: go tool dist list -json
+# sub-commands: mod linux clean, l-install, 386 amd64, verbose tidy, tosrv tofo
 
 # set a copyto directory.
 export copyto=/c/Users/tfwro/Desktop/DesktopMess/.git-react/react-fomantic
 # default[mod:GO111MODULE=on]
 export GOARCH=amd64
-
 # 
 # This script does a few things, all of which require some form of input.
 if [ "${#}" == "0" ]; then
   echo no args so we\'ll do a standard build
-  standard_stuff clean build mod
+  echo sub-commands\: mod linux clean, l-install, 386 amd64, verbose tidy, tosrv tofo
+  exit 0
+  # standard_stuff clean build mod
 fi
 # mod:linux:clean
 do_init(){
@@ -72,8 +74,8 @@ do_build(){
     case "${i}" in
       build)
         echo building
-        echo go build -o srv-${GOARCH}.exe ${buildmod} *.go
-        go build -o srv-${GOARCH}.exe ${buildmod} *.go
+        echo go build -tags=jsoniter -o srv-${GOARCH}.exe ${buildmod} *.go
+        go build -tags=jsoniter -o srv-${GOARCH}.exe ${buildmod} *.go
         ;;
     esac
   done
@@ -120,11 +122,16 @@ do_copy(){
   do
     case "${i}" in
       tofo)
-        echo we\'re here at least
+        echo copying to
+        echo destination\: ${copyto}/srv.exe
+        echo destination\: ${copyto}
         cp -f  srv-${GOARCH}.exe ${copyto}/srv.exe
         cp -f  srv-${GOARCH}.exe ${copyto}
         ;;
       tosrv)
+        echo copying to
+        echo destination\: ${copyto}/srv.exe
+        echo destination\: srv.exe
         cp -f  srv-${GOARCH}.exe ${copyto}/srv.exe
         cp -f  srv-${GOARCH}.exe srv.exe
         ;;
