@@ -62,18 +62,18 @@ func initialize() {
 	configuration.FromJSON() // loads (or creates conf.json and terminates application)
 
 	gin.SetMode(gin.ReleaseMode)
-	mGin := gin.Default()
+	router := gin.Default()
 
-	configuration.GinConfig(mGin)
+	configuration.GinConfig(router)
 
 	if configuration.DoTLS() {
 		println("- TLS on")
-		if err := mGin.RunTLS(configuration.Server.Port, configuration.Server.Crt, configuration.Server.Key); err != nil {
+		if err := router.RunTLS(configuration.Server.Port, configuration.Server.Crt, configuration.Server.Key); err != nil {
 			panic(fmt.Sprintf("router error: %s\n", err))
 		}
 	} else {
 		println("- TLS off")
-		if err := mGin.Run(configuration.Server.Port); err != nil {
+		if err := router.Run(configuration.Server.Port); err != nil {
 			panic(fmt.Sprintf("router error: %s\n", err))
 		}
 	}
