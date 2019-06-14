@@ -2,9 +2,11 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"tfw.io/Go/fsindex/fsindex"
@@ -19,6 +21,20 @@ type Configuration struct {
 	Indexes    []IndexPath        `json:"indx,omitempty"`
 	Extensions []fsindex.FileSpec `json:"spec,omitempty"`
 	indexPath  string             // assigned; not used.
+}
+
+// GetFilePath only checks to see if we have indexed (configuration.Index)
+// the path in order to obtain/return it.
+func (c *Configuration) GetFilePath(route string, action string) (string, error) {
+	urlpath := strings.Replace(action, "/tag/", "", 1)
+	result := ""
+	for _, index := range c.Indexes {
+		if route == strings.Trim(index.Target, "/") {
+			result += fmt.Sprintf("%s == %s\n", route, strings.Trim(index.Target, "/"))
+			return fmt.Sprintf("%s%s", util.UnixSlash(filepath.Dir(index.Source)), urlpath), nil
+		}
+	}
+	return result, errors.New("file not found")
 }
 
 // FromJSON loads JSON configuration.
