@@ -72,9 +72,8 @@ func (c *Configuration) GinConfig(router *gin.Engine) {
 	}
 
 	println("/tag/ handler")
-	router.GET("/tag/:route/*action", func(g *gin.Context) {
-		TagHandler(c, g)
-	})
+	router.GET("/tag/:route/*action", func(g *gin.Context) { TagHandler(c, g) })
+	router.GET("/jtag/:route/*action", func(g *gin.Context) { TagHandlerJSON(c, g) })
 }
 
 func (c *Configuration) createEntry(path IndexPath, settings fsindex.Settings) fsindex.Model {

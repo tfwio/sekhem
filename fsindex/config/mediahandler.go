@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -24,15 +25,14 @@ type MediaInfo struct {
 	Album       string
 }
 
-func TagHandler(conf *Configuration, c *gin.Context) {
-
+func getTagData(conf *Configuration, c *gin.Context) MediaInfo {
 	action := c.Param("action")
 	route := c.Param("route")
 	var (
 		path string
 		err  error
 	)
-	var mnfo MediaInfo = MediaInfo{
+	var mnfo = MediaInfo{
 		ImageMime:   "Unkn",
 		Path:        "",
 		Title:       "",
@@ -48,7 +48,7 @@ func TagHandler(conf *Configuration, c *gin.Context) {
 		if err2 == nil {
 			mpic := media.Picture()
 			mnfo = MediaInfo{
-				ImageMime:   "Unkn",
+				ImageMime:   "unknown",
 				Path:        path,
 				Title:       media.Title(),
 				Comment:     strings.ReplaceAll(media.Comment(), "\n", "<br />\n"),
@@ -75,6 +75,16 @@ func TagHandler(conf *Configuration, c *gin.Context) {
 	} else {
 		mnfo.Data += fmt.Sprintf("error: %s\nRoute: %s, Action: %s<br/>\n", err, route, action)
 	}
+	return mnfo
+}
+
+func TagHandler(conf *Configuration, c *gin.Context) {
+	mnfo := getTagData(conf, c)
 	mediafiletemplate.ExecuteTemplate(c.Writer, "mediafile", mnfo)
 
+}
+
+func TagHandlerJSON(conf *Configuration, c *gin.Context) {
+	mnfo := getTagData(conf, c)
+	c.JSON(http.StatusOK, mnfo)
 }
