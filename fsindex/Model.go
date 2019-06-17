@@ -21,6 +21,6 @@ type Settings struct {
 // Model is the same as PathEntry but with Settings
 type Model struct {
 	PathEntry
-	SimpleModel
-	Settings
+	SimpleModel `json:"-"`
+	Settings    `json:"-"`
 }
