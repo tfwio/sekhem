@@ -19,6 +19,10 @@ var (
 	fCounter          int32
 )
 
+type JsonIndex struct {
+	Index []string `json:"index"`
+}
+
 // GinConfig configures gin.Engine.
 func (c *Configuration) GinConfig(router *gin.Engine) {
 
@@ -44,6 +48,18 @@ func (c *Configuration) GinConfig(router *gin.Engine) {
 		source := util.Abs(util.Cat(c.Root.Directory, "\\", rootEntry))
 		router.StaticFile(target, source)
 		fmt.Printf("  > Target = %-18s, Source = %s\n", target, source)
+	}
+	println("root-files: allowed")
+	if c.Root.Allow != "" {
+		allowed := strings.Split(c.Root.Allow, ",")
+		for i := range allowed {
+			allowed[i] = strings.Trim(allowed[i], " ")
+			allowed[i] = strings.Trim(allowed[i], "\n")
+			target := util.Cat(c.Root.Path, allowed[i])
+			source := util.Abs(util.Cat(c.Root.Directory, "\\", allowed[i]))
+			fmt.Printf("  > Target = %-18s, Source = %s\n", target, source)
+			router.StaticFile(target, source)
+		}
 	}
 
 	println("locations")

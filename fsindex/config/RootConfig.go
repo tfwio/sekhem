@@ -9,6 +9,7 @@ type RootConfig struct {
 	Directory    string   `json:"dir"`
 	Files        []string `json:"files"`
 	AliasDefault []string `json:"alias"`
+	Allow        string   `json:"allow"`   // comma-separated list of additional allowed files.
 	Default      string   `json:"default"` // Default document. default=index.html
 }
 
