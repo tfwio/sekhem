@@ -68,6 +68,8 @@ func (c *Configuration) GinConfig(router *gin.Engine) {
 		fmt.Printf("  > Target = %-18s, Source = %s\n", tgt.Target, tgt.Source)
 	}
 
+	xdata := JsonIndex{}
+	xdata.Index = []string{}
 	println("location indexes")
 	for _, path := range c.Indexes {
 
@@ -82,6 +84,7 @@ func (c *Configuration) GinConfig(router *gin.Engine) {
 
 		if path.Servable {
 			router.StaticFS(modelpath, gin.Dir(util.Abs(path.Source), path.Browsable))
+			xdata.Index = append(xdata.Index, jsonpath)
 		}
 
 		router.GET(jsonpath, func(ctx *gin.Context) { ctx.JSON(http.StatusOK, &model) })
@@ -89,13 +92,6 @@ func (c *Configuration) GinConfig(router *gin.Engine) {
 
 	println("JSON-index Target \"/json-index\"")
 	router.GET("/json-index", func(g *gin.Context) {
-		xdata := JsonIndex{}
-		xdata.Index = []string{}
-		for _, path := range c.Indexes {
-			if path.Servable {
-				xdata.Index = append(xdata.Index, path.Target)
-			}
-		}
 		g.JSON(http.StatusOK, xdata)
 	})
 
