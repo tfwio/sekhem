@@ -12,17 +12,17 @@ import (
 )
 
 type MediaInfo struct {
-	HasImage    bool
-	Data        string
-	Path        string
-	ImageMime   string
-	ImageData   string
-	Title       string
-	Comment     string
-	Artist      string
-	AlbumArtist string
-	Year        int
-	Album       string
+	HasImage    bool   `json:"hasimage,omitempty"`
+	Data        string `json:"dbg,omitempty"`
+	Path        string `json:"-"`
+	ImageMime   string `json:"mime"`
+	ImageData   string `json:"pic"`
+	Title       string `json:"title"`
+	Comment     string `json:"cmmt"`
+	Artist      string `json:"artist"`
+	AlbumArtist string `json:"albumartist"`
+	Year        int    `json:"year"`
+	Album       string `json:"album"`
 }
 
 func getTagData(conf *Configuration, c *gin.Context) MediaInfo {
@@ -86,5 +86,9 @@ func TagHandler(conf *Configuration, c *gin.Context) {
 
 func TagHandlerJSON(conf *Configuration, c *gin.Context) {
 	mnfo := getTagData(conf, c)
+	mnfo.Path = ""
+	if mnfo.HasImage {
+		mnfo.ImageData = fmt.Sprintf("data:%s;base64,%s", mnfo.ImageMime, mnfo.ImageData)
+	}
 	c.JSON(http.StatusOK, mnfo)
 }
