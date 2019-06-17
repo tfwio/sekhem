@@ -87,6 +87,18 @@ func (c *Configuration) GinConfig(router *gin.Engine) {
 		router.GET(jsonpath, func(ctx *gin.Context) { ctx.JSON(http.StatusOK, &model) })
 	}
 
+	println("JSON-index Target \"/json-index\"")
+	router.GET("/json-index", func(g *gin.Context) {
+		xdata := JsonIndex{}
+		xdata.Index = []string{}
+		for _, path := range c.Indexes {
+			if path.Servable {
+				xdata.Index = append(xdata.Index, path.Target)
+			}
+		}
+		g.JSON(http.StatusOK, xdata)
+	})
+
 	println("/tag/ handler")
 	router.GET("/tag/:route/*action", func(g *gin.Context) { TagHandler(c, g) })
 	router.GET("/jtag/:route/*action", func(g *gin.Context) { TagHandlerJSON(c, g) })
