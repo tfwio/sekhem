@@ -2,9 +2,10 @@
 
 # fyi: go tool dist list -json
 # sub-commands: mod linux clean, l-install, 386 amd64, verbose tidy, tosrv tofo
+# cp2 uses jsoniter
 
 # set a copyto directory.
-export copyto=/c/Users/tfwro/Desktop/DesktopMess/.git-react/react-fomantic
+export copyto=/c/Users/tfwro/Desktop/DesktopMess/.git-react/react-box
 # default[mod:GO111MODULE=on]
 export GOARCH=amd64
 # 
@@ -121,6 +122,14 @@ do_copy(){
   for i in "$@"
   do
     case "${i}" in
+      cp)
+        echo GO111MODULE=on go build -o srv.exe -mod vendor srv.go \&\& cp -f  srv.exe ${copyto}
+        GO111MODULE=on go build -o srv.exe -mod vendor srv.go && cp -f  srv.exe ${copyto}
+        ;;
+      cp2)
+        echo GO111MODULE=on go build -tags=jsoniter -o srv.exe -mod vendor srv.go \&\& cp -f  srv.exe ${copyto}
+        GO111MODULE=on go build -tags=jsoniter -o srv.exe -mod vendor srv.go && cp -f  srv.exe ${copyto}
+        ;;
       tofo)
         echo copying to
         echo destination\: ${copyto}/srv.exe
