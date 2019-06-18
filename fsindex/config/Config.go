@@ -12,14 +12,19 @@ import (
 )
 
 var (
-	UseTLS            = false            // UseTLS — you know.
-	DefaultConfigFile = "data/conf.json" // DefaultConfigFile — you know.
+	// UseTLS is a cli (console) override for using TLS or not.
+	// It can only be put on in the console and if `--use-tls` is not set
+	// then this will always remain false.
+	UseTLS = false
+	// DefaultConfigFile — you know.  Default = `./data/conf`.
+	DefaultConfigFile = "data/conf.json"
 	extMap            map[string]*fsindex.FileSpec
 	xCounter          int32
 	fCounter          int32
 )
 
-type JsonIndex struct {
+// JSONIndex — a simple container for JSON.
+type JSONIndex struct {
 	Index []string `json:"index"`
 }
 
@@ -68,7 +73,7 @@ func (c *Configuration) GinConfig(router *gin.Engine) {
 		fmt.Printf("  > Target = %-18s, Source = %s\n", tgt.Target, tgt.Source)
 	}
 
-	xdata := JsonIndex{}
+	xdata := JSONIndex{}
 	xdata.Index = []string{}
 	println("location indexes")
 	for _, path := range c.Indexes {
