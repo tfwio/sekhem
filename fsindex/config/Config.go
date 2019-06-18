@@ -92,7 +92,7 @@ func (c *Configuration) GinConfig(router *gin.Engine) {
 			xdata.Index = append(xdata.Index, jsonpath)
 		}
 
-		router.GET(jsonpath, func(ctx *gin.Context) { ctx.JSON(http.StatusOK, &model) })
+		router.GET(jsonpath, func(ctx *gin.Context) { ctx.JSON(http.StatusOK, &model.PathEntry) })
 	}
 
 	println("JSON-index Target \"/json-index\"")
