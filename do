@@ -13,6 +13,7 @@ export GOARCH=amd64
 if [ "${#}" == "0" ]; then
   echo no args so we\'ll do a standard build
   echo sub-commands\: mod linux clean, l-install, 386 amd64, verbose tidy, tosrv tofo
+  echo cp, cp2 \(uses jsoniter\)
   exit 0
   # standard_stuff clean build mod
 fi
@@ -122,6 +123,10 @@ do_copy(){
   for i in "$@"
   do
     case "${i}" in
+      m2)
+        echo go build -o m2.exe util/m2.go
+        go build -o m2.exe util/m2.go
+        ;;
       cp)
         echo GO111MODULE=on go build -o srv.exe -mod vendor srv.go \&\& cp -f  srv.exe ${copyto}
         GO111MODULE=on go build -o srv.exe -mod vendor srv.go && cp -f  srv.exe ${copyto}
