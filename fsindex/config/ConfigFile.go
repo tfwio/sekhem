@@ -37,19 +37,25 @@ func (c *Configuration) GetFilePath(route string, action string) (string, error)
 	return result, errors.New("file not found")
 }
 
+// ToJSON writes JSON configuration.
+func (c *Configuration) ToJSON(jsonPath string) {
+	containingDirectory := filepath.Dir(jsonPath)
+	if !util.DirectoryExists(containingDirectory) {
+		panic(fmt.Sprintf("Target directory does not exist: %s\n", containingDirectory))
+	}
+	c.SaveJSON(jsonPath)
+	fmt.Printf(constMessageWroteJSON, jsonPath)
+}
+
 // FromJSON loads JSON configuration.
-func (c *Configuration) FromJSON() {
-	if !util.FileExists(DefaultConfigFile) {
-		// if !util.DirectoryExists(constDefaultDataPath) {
-		// 	os.Mkdir(constDefaultDataPath, constFileFolderAccessPrivelage)
-		// }
-		c.SaveJSON(DefaultConfigFile)
-		println(constMessageWroteJSON)
+func (c *Configuration) FromJSON(json string) {
+	if !util.FileExists(json) {
+		c.ToJSON(json)
+		println("[terminating application]")
 		os.Exit(1)
 	} else {
-		c.LoadJSON(DefaultConfigFile)
+		c.LoadJSON(json)
 	}
-
 	c.MapExtensions()
 }
 
@@ -140,7 +146,6 @@ func (c *Configuration) InitializeDefaults(path string, targetPath string) {
 
 // Prepare sorts out ugly configuration settings.
 func (c *Configuration) Prepare() {
-	c.Path = util.WReap("/", c.Path)
 	for _, l := range c.Locations {
 		l.Target = util.WReap("/", l.Target)
 	}

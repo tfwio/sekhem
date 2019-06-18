@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli"
 
 	"tfw.io/Go/fsindex/fsindex/config"
+	"tfw.io/Go/fsindex/util"
 )
 
 // Configuration variables
@@ -32,14 +33,36 @@ func initializeCli() {
 	mCli.Version = "v0.0.0"
 	mCli.Copyright = "tfwio.github.com/go-fsindex\n\n   This is free, open-source software.\n   disclaimer: use at own risk."
 	mCli.Action = func(*cli.Context) { initialize() }
-	mCli.Commands = []cli.Command{cli.Command{
-		Name:        "run",
-		Action:      func(*cli.Context) { initialize() },
-		Usage:       "Runs the server.",
-		Description: "Default operation.",
-		Aliases:     []string{"go"},
-		Flags:       []cli.Flag{},
-	}}
+	mCli.Commands = []cli.Command{
+		cli.Command{
+			Name:        "run",
+			Action:      func(*cli.Context) { initialize() },
+			Usage:       "Runs the server.",
+			Description: "Default operation.",
+			Aliases:     []string{"go"},
+			Flags:       []cli.Flag{},
+		},
+		cli.Command{
+			Name:        "make-conf",
+			Description: "Generate configuration file: <[file-path].json>.",
+			Usage:       fmt.Sprintf("%s make-conf <[file-path].json>", filepath.Base(os.Args[0])),
+			Flags:       []cli.Flag{},
+			Action: func(clictx *cli.Context) {
+				if clictx.NArg() == 0 {
+					fmt.Println("- supply a file-name to generate.\nI.E. \"conf.json\"")
+					os.Exit(0)
+				}
+				fmt.Printf("- found %s\n", util.Abs(clictx.Args().First()))
+				thearg := clictx.Args().First()
+				input := util.Abs(clictx.Args().First())
+				if util.FileExists(input) {
+					fmt.Printf("- please delete the file (%s) before calling this command\n", thearg)
+					os.Exit(0)
+				}
+				configuration.InitializeDefaults(defaultConfPath, defaultConfTarget)
+				configuration.ToJSON(input)
+			},
+		}}
 	mCli.Flags = []cli.Flag{
 		cli.BoolFlag{
 			Name:        "tls",
@@ -58,8 +81,8 @@ func initializeCli() {
 
 func initialize() {
 
-	configuration.InitializeDefaults("multi-media\\public", "v")
-	configuration.FromJSON() // loads (or creates conf.json and terminates application)
+	configuration.InitializeDefaults(defaultConfPath, defaultConfTarget)
+	configuration.FromJSON(config.DefaultConfigFile) // loads (or creates conf.json and terminates application)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -78,3 +101,8 @@ func initialize() {
 		}
 	}
 }
+
+const (
+	defaultConfPath   = "multi-media\\public"
+	defaultConfTarget = "v"
+)

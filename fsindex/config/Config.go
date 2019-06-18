@@ -83,6 +83,7 @@ func (c *Configuration) GinConfig(router *gin.Engine) {
 
 		fmt.Printf("  > Target = %-18s, json = %s,  Source = %s\n", modelpath, c.GetPath(jsonpath), path.Source)
 		model := c.createEntry(path, fsindex.DefaultSettings)
+
 		if !model.Settings.OmitRootNameFromPath {
 			modelpath = util.WReap("/", path.Target, model.Name)
 		}
@@ -182,11 +183,9 @@ const (
 	constConfJSONReadSuccess  = "got JSON configuration"
 	constConfJSONReadError    = "Error: failed to read JSON configuration. %s\n"
 	constMessageWroteJSON     = `
-We've exported a default data/conf.json for your editing.
+We've exported a default "%s" for your editing.
 
 Modify the file per your preferences.
-
-[terminating application]
 `
 	constRootAliasDefault     = "home,index.htm,index.html,index,default,default.htm"
 	constRootFilesDefault     = "json.json,bundle.js,favicon.ico"
