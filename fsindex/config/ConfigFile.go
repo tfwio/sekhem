@@ -53,13 +53,22 @@ func (c *Configuration) FromJSON() {
 	c.MapExtensions()
 }
 
+// HasTLS checks if we have certificate files pointed to by our configuration file.
+//
+// It does not validate the certificates.
+func (c *Configuration) HasTLS() bool {
+	return c.Server.hasCert() && c.Server.hasKey()
+}
+
 // DoTLS returns a boolean value that tells wether or not
 // the client and configuration is going to serve via TLS.
 func (c *Configuration) DoTLS() bool {
 	if UseTLS {
-		return c.Server.hasCert() && c.Server.hasKey()
+		return c.HasTLS()
+	} else if c.TLS {
+		return c.HasTLS()
 	}
-	return c.Server.hasCert() && c.Server.hasKey() && c.Server.TLS
+	return false
 }
 
 // DefaultFile provides a absolute file-system path to the
