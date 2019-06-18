@@ -82,7 +82,7 @@ func (c *Configuration) GinConfig(router *gin.Engine) {
 		modelpath := util.WReap("/", path.Target)
 
 		fmt.Printf("  > Target = %-18s, json = %s,  Source = %s\n", modelpath, c.GetPath(jsonpath), path.Source)
-		model := c.createEntry(path, fsindex.DefaultSettings)
+		model := c.createEntry(path, c.IndexCfg)
 
 		if !model.Settings.OmitRootNameFromPath {
 			modelpath = util.WReap("/", path.Target, model.Name)
