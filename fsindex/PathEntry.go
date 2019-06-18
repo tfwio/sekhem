@@ -123,8 +123,11 @@ func (p *PathEntry) Refresh(model *Model, counter *(int32), handler *Handlers) {
 						Mod:       fileinfo.ModTime(),
 					}
 
-					pt := util.UnixSlash(util.Cat(model.FauxPath, "/", child.RootedPath(model)))
-					child.Path = util.StripFileExtensionC(model.StripFileExtensionFromPath, pt)
+					if model.HardLinks {
+						child.Path = util.UnixSlash(util.Cat(model.FauxPath, "/", child.RootedPath(model)))
+					} else {
+						child.Path = util.UnixSlash(child.RootedPath(model))
+					}
 
 					p.Files = append(p.Files, child)
 					if handler != nil {
@@ -163,7 +166,12 @@ func (p *PathEntry) Refresh(model *Model, counter *(int32), handler *Handlers) {
 					IsRoot: false,
 				},
 			}
-			child.Path = util.UnixSlash(util.Cat(model.FauxPath, "/", child.RootedPath(model)))
+
+			if model.HardLinks {
+				child.Path = util.UnixSlash(util.Cat(model.FauxPath, "/", child.RootedPath(model)))
+			} else {
+				child.Path = util.UnixSlash(child.RootedPath(model))
+			}
 
 			if !child.IsIgnore(model) {
 				child.Refresh(model, counter, handler)

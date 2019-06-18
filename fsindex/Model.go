@@ -16,6 +16,9 @@ type Settings struct {
 	StripFileExtensionFromName bool
 	StripFileExtensionFromPath bool
 	UnknownCharsToDash         bool
+	// this tells us weather or not to use full link-path
+	// such as `http://[server:port]/` when generating JSON.
+	HardLinks bool
 }
 
 // Model is the same as PathEntry but with Settings

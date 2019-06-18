@@ -11,9 +11,11 @@ type Server struct {
 	Port string `json:"port"`
 	Host string `json:"host"`
 	Path string `json:"path"`
-	TLS  bool   `json:"tls"` // default=false unless `os.Args[1] == "tls"` or specified in `[data/]config.json`.
-	Crt  string `json:"crt,omitempty"`
-	Key  string `json:"key,omitempty"`
+	// default=false unless `os.Args[1] == "tls"` or specified
+	// in `[data/]config.json`.
+	TLS bool   `json:"tls"`
+	Crt string `json:"crt,omitempty"`
+	Key string `json:"key,omitempty"`
 }
 
 func (s *Server) info() {

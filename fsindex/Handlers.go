@@ -89,7 +89,13 @@ func (p *PathEntry) RefreshCB(rootPathEntry *Model, counter *(int32), cbPath *CB
 						Name:      util.StripFileExtension(filepath.Base(mFullPath)),
 						Extension: filepath.Ext(mFullPath),
 					}
-					child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.RootedPath(mRoot)))
+
+					if mRoot.HardLinks {
+						child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.RootedPath(mRoot)))
+					} else {
+						child.Path = util.UnixSlash(child.RootedPath(mRoot))
+					}
+
 					p.Files = append(p.Files, child)
 					if cbFile != nil {
 						if (*cbFile)(mRoot, &child) {
@@ -127,7 +133,12 @@ func (p *PathEntry) RefreshCB(rootPathEntry *Model, counter *(int32), cbPath *CB
 					IsRoot: false,
 				},
 			}
-			child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.RootedPath(mRoot)))
+
+			if mRoot.HardLinks {
+				child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.RootedPath(mRoot)))
+			} else {
+				child.Path = util.UnixSlash(child.RootedPath(mRoot))
+			}
 
 			if child.IsIgnore(mRoot) {
 
