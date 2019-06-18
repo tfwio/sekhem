@@ -17,10 +17,10 @@ import (
 type Configuration struct {
 	Server     `json:"serv"`
 	Root       RootConfig         `json:"root"`
-	Locations  []StaticPath       `json:"stat"`
+	Locations  []StaticPath       `json:"stat,omitempty"`
 	Indexes    []IndexPath        `json:"indx,omitempty"`
 	Extensions []fsindex.FileSpec `json:"spec,omitempty"`
-	indexPath  string             // assigned; not used.
+	IndexCfg   fsindex.Settings   `json:"index-cfg,omitempty"`
 }
 
 // GetFilePath only checks to see if we have indexed (configuration.Index)
@@ -90,6 +90,7 @@ func (c *Configuration) GetPath(more ...string) string {
 
 // InitializeDefaults produces faux configuration settings.
 func (c *Configuration) InitializeDefaults(path string, targetPath string) {
+	c.IndexCfg = fsindex.DefaultSettings
 	// println("==> Configuring")
 	c.Server.initServerConfig()
 	c.Root = RootConfig{
@@ -134,7 +135,6 @@ func (c *Configuration) InitializeDefaults(path string, targetPath string) {
 		},
 	}
 	// c.info()
-	c.indexPath = c.GetPath(c.Server.Path) // asssigned, not used.
 	c.Prepare()
 }
 
