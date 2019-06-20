@@ -159,7 +159,7 @@ func (p *PathEntry) Refresh(model *Model, counter *(int32), handler *Handlers) {
 						Parent:    p,
 						FullPath:  mFullPath,
 						SHA1:      util.Sha1String(mFullPath),
-						Name:      util.StripFileExtension(filepath.Base(mFullPath)),
+						Name:      filepath.Base(mFullPath),
 						Extension: filepath.Ext(mFullPath),
 						Mod:       fileinfo.ModTime(),
 					},
