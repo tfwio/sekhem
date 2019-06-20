@@ -70,6 +70,11 @@ func initializeCli() {
 			Usage:       "Wether or not to use TLS.\n\tNote: if set, overrides (JSON) conf settings.",
 		},
 		cli.StringFlag{
+			Name:        "host",
+			Destination: &config.UseHost,
+			Usage:       "UseHost is identifies the host to use to over-ride JSON config.",
+		},
+		cli.StringFlag{
 			Name:        "conf",
 			Usage:       "Points to a custom configuration file.",
 			Value:       config.DefaultConfigFile,
@@ -83,13 +88,16 @@ func initialize() {
 
 	configuration.InitializeDefaults(defaultConfPath, defaultConfTarget)
 	configuration.FromJSON(config.DefaultConfigFile) // loads (or creates conf.json and terminates application)
-
+	configuration.TLS = configuration.DoTLS()
+	if config.UseHost != "" {
+		configuration.Server.Host = config.UseHost
+	}
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
 	configuration.GinConfig(router)
 
-	if configuration.DoTLS() {
+	if configuration.TLS {
 		println("- TLS on")
 		if err := router.RunTLS(configuration.Server.Port, configuration.Server.Crt, configuration.Server.Key); err != nil {
 			panic(fmt.Sprintf("router error: %s\n", err))
