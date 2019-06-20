@@ -1,7 +1,25 @@
 {
+  "editor.fontFamily": "Fira Code, Consolas, 'Courier New', monospace",
+  "editor.fontWeight": "400",
+  "editor.fontLigatures": true, 
+  "go.formatTool": "goimports",
+  "go.gopath": "c:/dev/root/go",
+  "go.goroot": "c:/dev/tool/go1.12.6.windows-amd64",
   "go.toolsEnvVars": {
-    "GOARCH": "amd64",
-    // "GO111MODULE": "on",
+    "GOPATH": "c:\\dev\\root\\go",
+    "GOROOT": "c:\\dev\\tool\\go1.12.6.windows-amd64",
+    "GO111MODULE": "on",
+    "PATH": "${GOROOT}/bin;${GOPATH}/bin;${GOPATH}/.bin;${PATH}"
   },
-  "go.formatTool": "goimports"
+  
+  // "go.formatTool": "goimports",
+  "terminal.integrated.cwd": "C:/msys64/usr/bin",
+  "terminal.integrated.shell.windows":"C:/msys64/msys2_shell.cmd",
+  "terminal.integrated.shellArgs.windows": [
+    "-mingw64",
+    "-no-start",
+    "-defterm"
+  ],
+  // "go.useLanguageServer": true,
+  
 }
