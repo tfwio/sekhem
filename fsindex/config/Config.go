@@ -108,46 +108,69 @@ func (c *Configuration) initializeModels() {
 		c.initializeModel(&path)
 	}
 }
-
+func (c *Configuration) getModelIndex(mdl *fsindex.Model) (int, bool) {
+	for index, mMdl := range models {
+		if mMdl.FullPath == mdl.FullPath {
+			return index, true
+		}
+	}
+	return -1, false
+}
 func (c *Configuration) initializeModel(path *IndexPath) {
 
+	fmt.Printf("--> indexing: %s\n", path.Target)
 	model := c.createEntry(*path, c.IndexCfg)
-
-	fmt.Printf("  > make model: %s : %s\n", path.Target, model.FullPath)
-	if _, ok := mdlMap[path.Target]; !ok {
+	if _, ok := mdlMap[util.AbsBase(path.Source)]; !ok {
 		models = append(models, model)
+	} else {
+		if index, ok := c.getModelIndex(&model); ok {
+			models[index] = model
+			println("Injecting memory-Model %s at index %d", mdlMap[model.Name].Name, index)
+		}
 	}
-	// FIXME: we should only have one, but two works for now.
-	// one is for our referencing from the IndexPath
-	// the other, for referencing from URI path.
-	// its not such a bad thing to store duplicate pointers,
-	// but we really shouldn't have to.
-	mdlMap[path.Target] = &models[len(models)-1]
-	mdlMap[model.Name] = &models[len(models)-1]
+	if index, ok := c.getModelIndex(&model); ok {
+		mdlMap[model.Name] = &models[index]
+	} else {
+		panic("Could not find memory-Model")
+	}
 }
 
-func (c *Configuration) getModelPath(path *IndexPath) string {
+func (c *Configuration) getSimpleIndexTarget(path *IndexPath) string {
+	return util.WReap("/", util.AbsBase(path.Source))
+}
+
+func (c *Configuration) getIndexTarget(path *IndexPath) string {
 	modelpath := util.WReap("/", path.Target)
 	if !c.IndexCfg.OmitRootNameFromPath {
 		modelpath = util.WReap("/", path.Target, util.AbsBase(path.Source))
 	}
 	return modelpath
 }
-func (c *Configuration) findIndexPath(route string) bool {
+func (c *Configuration) hasModel(route string) bool {
 
 	if _, ok := mdlMap[route]; ok {
 		return true
 	}
 	return false
-
 }
+func (c *Configuration) indexFromTarget(route string) *IndexPath {
+	inputTarget := util.WReap("/", route)
+	for _, x := range c.Indexes {
+		simpleIndexTarget := c.getSimpleIndexTarget(&x)
+		if inputTarget == simpleIndexTarget {
+			return &x
+		}
+	}
+	return nil
+}
+
 func (c *Configuration) serveModelIndex(router *gin.Engine) {
 	println("location indexes #2: primary")
 	for _, path := range c.Indexes {
 		jsonpath := util.WReap("/", "json", util.AbsBase(path.Source))
 		modelpath := util.WReap("/", path.Target)
 		fmt.Printf("  > Target = %-18s, json = %s,  Source = %s\n", modelpath, c.GetPath(jsonpath), path.Source)
-		modelpath = c.getModelPath(&path)
+		modelpath = c.getIndexTarget(&path)
 
 		if path.Servable {
 			router.StaticFS(modelpath, gin.Dir(util.Abs(path.Source), path.Browsable))
@@ -159,15 +182,12 @@ func (c *Configuration) serveModelIndex(router *gin.Engine) {
 	router.GET("/tag/:route/*action", func(g *gin.Context) { TagHandler(c, g) })
 	router.GET("/jtag/:route/*action", func(g *gin.Context) { TagHandlerJSON(c, g) })
 }
-func (c *Configuration) serveJSON(ctx *gin.Context) {
 
-	for i := range mdlMap {
-		fmt.Printf("map item %v\n", i)
-	}
+func (c *Configuration) serveJSON(ctx *gin.Context) {
 
 	mroute := ctx.Param("route")
 
-	if c.findIndexPath(mroute) {
+	if c.hasModel(mroute) {
 		mmdl := mdlMap[mroute]
 		fmt.Printf("SERVING JSON FOR: %v, %s\n", mroute, mmdl.FullPath)
 		ctx.JSON(http.StatusOK, &mmdl.PathEntry)
@@ -178,19 +198,16 @@ func (c *Configuration) serveJSON(ctx *gin.Context) {
 	}
 }
 func (c *Configuration) refreshRouteJSON(g *gin.Context) {
-	route := g.Param("route")
-	for _, nx := range c.Indexes {
-		pth := c.getModelPath(&nx)
-		if _, ok := mdlMap[pth]; ok {
-			jsi := JSONIndex{Index: []string{fmt.Sprintf("FOUND model for index: %s, %s", route, pth)}}
-			c.initializeModel(&nx)
-			g.JSON(http.StatusOK, &jsi)
-			return
-		}
+	mroute := g.Param("route")
+	jsi := JSONIndex{Index: []string{fmt.Sprintf("FOUND model for index: %s", mroute)}}
+	if ndx, ok := c.indexFromTarget(mroute), c.hasModel(mroute); ok && ndx != nil {
+		c.initializeModel(ndx)
+		g.JSON(http.StatusOK, jsi)
+		return
 	}
-	jsi := JSONIndex{Index: []string{fmt.Sprintf("COULD NOT find model for index: %s", route)}}
+	jsi = JSONIndex{Index: []string{fmt.Sprintf("COULD NOT find model for index: %s", mroute)}}
 	g.JSON(http.StatusOK, &jsi)
-	fmt.Printf("COULD NOT find model for index: %s\n", route)
+	fmt.Printf("ERROR> COULD NOT find model for index: %s\n", mroute)
 }
 
 func (c *Configuration) createEntry(path IndexPath, settings fsindex.Settings) fsindex.Model {
