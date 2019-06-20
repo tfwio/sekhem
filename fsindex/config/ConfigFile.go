@@ -97,6 +97,11 @@ func (c *Configuration) GetPath(more ...string) string {
 // InitializeDefaults produces faux configuration settings.
 func (c *Configuration) InitializeDefaults(path string, targetPath string) {
 	c.IndexCfg = fsindex.DefaultSettings
+
+	// initialize model array and map.
+	models = []fsindex.Model{}
+	mdlMap = make(map[string]*fsindex.Model)
+
 	// println("==> Configuring")
 	c.Server.initServerConfig()
 	c.Root = RootConfig{
