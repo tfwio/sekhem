@@ -15,9 +15,9 @@ var (
 	// It can only be put on in the console and if `--use-tls` is not set
 	// then this will always remain false.
 	UseTLS = false
-	// OverrideHost overrides the default `Configuration.Server.Host`  with `UseHost` if true.
-	OverrideHost = false
-	// UseHost is identifies the host to use during `OverrideHost` use.
+	// UsePORT is a CLI override.  If set to a value other than -1 it will be used.
+	UsePORT = -1
+	// UseHost is set by CLI to override the config-file Host setting..
 	UseHost = ""
 	// DefaultConfigFile — you know.  Default = `./data/conf`.
 	DefaultConfigFile = "data/conf.json"

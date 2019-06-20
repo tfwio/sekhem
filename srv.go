@@ -74,6 +74,11 @@ func initializeCli() {
 			Destination: &config.UseHost,
 			Usage:       "UseHost is identifies the host to use to over-ride JSON config.",
 		},
+		cli.IntFlag{
+			Name:        "port",
+			Destination: &config.UsePORT,
+			Usage:       "UseHost is identifies the host to use to over-ride JSON config.",
+		},
 		cli.StringFlag{
 			Name:        "conf",
 			Usage:       "Points to a custom configuration file.",
@@ -91,6 +96,9 @@ func initialize() {
 	configuration.TLS = configuration.DoTLS()
 	if config.UseHost != "" {
 		configuration.Server.Host = config.UseHost
+	}
+	if config.UsePORT != -1 {
+		configuration.Server.Port = fmt.Sprintf(":%d", config.UsePORT)
 	}
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
