@@ -11,6 +11,7 @@ import (
 	"tfw.io/Go/fsindex/util"
 )
 
+// MediaInfo struct is just what it says.
 type MediaInfo struct {
 	HasImage    bool   `json:"hasimage,omitempty"`
 	Data        string `json:"dbg,omitempty"`
@@ -78,12 +79,13 @@ func getTagData(conf *Configuration, c *gin.Context) MediaInfo {
 	return mnfo
 }
 
+// TagHandler wraps JSON data into an in memory html.Template.
 func TagHandler(conf *Configuration, c *gin.Context) {
 	mnfo := getTagData(conf, c)
 	mediafiletemplate.ExecuteTemplate(c.Writer, "mediafile", mnfo)
-
 }
 
+// TagHandlerJSON serves JSON data of course.
 func TagHandlerJSON(conf *Configuration, c *gin.Context) {
 	mnfo := getTagData(conf, c)
 	mnfo.Path = ""
