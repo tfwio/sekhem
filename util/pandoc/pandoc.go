@@ -9,6 +9,20 @@ import (
 	"tfw.io/Go/fsindex/util"
 )
 
+// Settings is for pandoc configuration settings
+type Settings struct {
+	Executable   string `json:"exe"`
+	HTMLTemplate string `json:"html"`
+	MetaTemplate string `json:"meta"`
+
+	// all environment variables will simply override original
+	// settings such as PATH.
+	//
+	// I.E. envvar=${input};${envvar}
+	// Environment map[string][]string `json:"env"`
+	// Environment map[string]interface{} `json:"env"`
+}
+
 // Wrapper wraps pandoc of course.
 type Wrapper struct {
 	cmdFlags []string
