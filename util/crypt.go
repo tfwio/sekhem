@@ -2,27 +2,40 @@ package util
 
 import (
 	"crypto/rand"
+	"runtime"
 
 	"golang.org/x/crypto/argon2"
 )
 
-// CSRNG CSRNGs
-func csrng(c int) []byte {
+var (
+	defaultHashMem    = uint32(64 * 1024)
+	defaultHashTime   = uint32(2)
+	defaultHashKeyLen = uint32(32)
+	defaultHashThread = int32(runtime.NumCPU())
+)
+
+// NewSaltCSRNG CSRNG salt
+func NewSaltCSRNG(c int) []byte {
 	b := make([]byte, c)
 	rand.Read(b)
 	return b
 }
 
-// CopyTo copys bytes into a byte array.
-func CopyTo(dst []byte, src []byte, offset int) {
+// NewSaltString calls NewSaltCSRNG and converts the result to base64 string.
+func NewSaltString(c int) string {
+	return BytesToBase64(NewSaltCSRNG(c))
+}
+
+// copyTo copys bytes into a byte array.
+func copyTo(dst []byte, src []byte, offset int) {
 	for j, k := range src {
 		dst[offset+j] = k
 	}
 }
 
-// CompareBytes returns true on match.
+// compareBytes returns true on match.
 // It compares length and each byte of inputs.
-func CompareBytes(a []byte, b []byte) bool {
+func compareBytes(a []byte, b []byte) bool {
 
 	if len(a) != len(b) {
 		return false
@@ -35,22 +48,26 @@ func CompareBytes(a []byte, b []byte) bool {
 	return true
 }
 
-func getHash(pass []byte, salt []byte) []byte {
+// GetHash dammit.
+func GetHash(pass []byte, salt []byte) []byte {
+
 	salty := make([]byte, len(salt)+len(pass))
-	CopyTo(salty, salt, 0)
-	CopyTo(salty, pass, len(salt))
-	return argon2.IDKey(pass, salty, 3, 32*1024, 4, 32)
+	copyTo(salty, salt, 0)         // add salt
+	copyTo(salty, pass, len(salt)) // add username to end
+
+	// 3 passes(time) 32 mB
+	return argon2.IDKey(pass, salty, defaultHashTime, defaultHashMem, uint8(runtime.NumCPU()), defaultHashKeyLen)
 }
 
-// SCreate makes HASH
-func SCreate(password string, salt []byte) []byte {
-	return getHash([]byte(password), salt)
+// GetPasswordHash makes a hash from password and salt.
+func GetPasswordHash(password string, salt []byte) []byte {
+	return GetHash([]byte(password), salt)
 }
 
-// SCheck checks HASH
-func SCheck(password string, salt []byte, hash []byte) bool {
-	if CompareBytes(SCreate(password, salt), hash) {
+// CheckPassword compares salt/password against an existing hash.
+func CheckPassword(password string, salt []byte, hash []byte) bool {
+	if compareBytes(GetPasswordHash(password, salt), hash) {
 		return true
 	}
-	return true
+	return false
 }
