@@ -95,6 +95,15 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 	router.GET("/json-index", func(g *gin.Context) {
 		g.JSON(http.StatusOK, xdata)
 	})
+
+	router.GET("/pan/:path/*action", func(g *gin.Context) {
+		c.servePandoc(c.Pandoc.HTMLTemplate, pandoctemplate, g)
+	})
+
+	router.GET("/meta/:path/*action", func(g *gin.Context) {
+		c.servePandoc(c.Pandoc.MetaTemplate, pandoctemplate, g)
+	})
+
 	c.initializeModels()
 	c.serveModelIndex(router)
 }
