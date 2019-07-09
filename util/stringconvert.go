@@ -13,23 +13,28 @@ import (
 // 	return hasher.Sum(nil)
 // }
 
-// FromBase64e gets base-64 url-string
+// FromBase64e gets base-64 StdEncoding
 func FromBase64e(input string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(input)
 }
 
-// FromBase64 gets base-64 url-string; ignores error.
+// FromBase64 gets base-64 StdEncoding; ignores error.
 func FromBase64(input string) []byte {
 	result, _ := base64.StdEncoding.DecodeString(input)
 	return result
 }
 
-// ToBase64 gets base-64 url-string
+// ToBase64 gets base-64 StdEncoding
 func ToBase64(input string) string {
 	return base64.StdEncoding.EncodeToString([]byte(input))
 }
 
-// Sha1String just gets SHA1.
+// BytesToBase64 gets base-64 StdEncoding
+func BytesToBase64(input []byte) string {
+	return base64.StdEncoding.EncodeToString([]byte(input))
+}
+
+// Sha1String just gets SHA1 StdEncoding.
 func Sha1String(pStrData string) string {
 	hasher := sha1.New()
 	hasher.Write([]byte(pStrData))
