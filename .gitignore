@@ -3,3 +3,8 @@
 /data
 *.sum
 *.exe
+util/crypto/cert.go
+util/crypto/generate_cert.no
+fsindex/config/testjpg.no
+.vscode/settings.json
+public/index.html
