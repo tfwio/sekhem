@@ -2,7 +2,7 @@
 
 # fyi: go tool dist list -json
 # sub-commands: mod linux clean, l-install, 386 amd64, verbose tidy, tosrv tofo
-# cp2 uses jsoniter
+# cp2 uses jsoniter (login | crypt : compile ./login.exe)
 
 # set a copyto directory.
 export copyto=/c/Users/tfwro/Desktop/DesktopMess/.git-react/react-box
@@ -22,6 +22,11 @@ do_init(){
   for i in "$@"
   do
     case "${i}" in
+      crypt | login)
+        export GO111MODULE=on
+        export buildmod="-mod vendor "
+        go build -o login.exe data/crypt.cli.go
+        ;;
       mod)
         export GO111MODULE=on
         export buildmod="-mod vendor "
