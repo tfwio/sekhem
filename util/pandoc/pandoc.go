@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 
-	"tfw.io/Go/fsindex/util"
+	"github.com/tfwio/sekhm/util"
 )
 
 // Settings is for pandoc configuration settings

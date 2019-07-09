@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
-	"tfw.io/Go/fsindex/util"
+	"github.com/tfwio/sekhm/util"
 )
 
 var (

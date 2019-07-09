@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"tfw.io/Go/fsindex/util"
+	"github.com/tfwio/sekhm/util"
 )
 
 // CBPath is a simple callback;

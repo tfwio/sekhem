@@ -1,25 +1,22 @@
 {
-  "editor.fontFamily": "Fira Code, Consolas, 'Courier New', monospace",
-  "editor.fontWeight": "400",
-  "editor.fontLigatures": true, 
-  "go.formatTool": "goimports",
-  "go.gopath": "c:/dev/root/go",
-  "go.goroot": "c:/dev/tool/go1.12.6.windows-amd64",
-  "go.toolsEnvVars": {
-    "GOPATH": "c:\\dev\\root\\go",
-    "GOROOT": "c:\\dev\\tool\\go1.12.6.windows-amd64",
-    "GO111MODULE": "on",
-    "PATH": "${GOROOT}/bin;${GOPATH}/bin;${GOPATH}/.bin;${PATH}"
-  },
-  
+  // // these are just suggested settings for msys2 windows
+
+  // //"editor.fontFamily": "Fira Code, Consolas, 'Courier New', monospace",
+  // //"editor.fontLigatures": true, 
   // "go.formatTool": "goimports",
-  "terminal.integrated.cwd": "C:/msys64/usr/bin",
-  "terminal.integrated.shell.windows":"C:/msys64/msys2_shell.cmd",
-  "terminal.integrated.shellArgs.windows": [
-    "-mingw64",
-    "-no-start",
-    "-defterm"
-  ],
-  // "go.useLanguageServer": true,
-  
+  // "go.gopath": "c:/dev/root/go",
+  // "go.toolsEnvVars": {
+  //   "GOPATH": "c:\\dev\\root\\go",
+  //   "GOROOT": "c:\\dev\\tool\\go1.12.6.windows-amd64",
+  //   "GO111MODULE": "on",
+  //   "PATH": "${GOROOT}/bin;${GOPATH}/bin;${GOPATH}/.bin;${PATH}"
+  // },
+  // "terminal.integrated.cwd": "C:/msys64/usr/bin",
+  // "terminal.integrated.shell.windows":"C:/msys64/msys2_shell.cmd",
+  // "terminal.integrated.shellArgs.windows": [
+  //   "-mingw64",
+  //   "-no-start",
+  //   "-defterm"
+  // ],
+  // // "go.useLanguageServer": true,
 }

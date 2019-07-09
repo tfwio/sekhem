@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+
+# renames local tfw.io/Go/fsindex project to github.com/tfwio/sekhm
+# you can just do a selective git-revert to put the files back to how
+# you'd like them.
+
+if [[ "x${MSYSTEM}" == "xMSYS" || "x${MSYSTEM}" == "xMINGW32" || "x${MSYSTEM}" == "xMINGW64" ]]; then
+  which unix2dos 2> /dev/null 1>&2
+  if [ "x${?}" != "x0" ]; then
+    echo
+    echo "- we've noticed you're using msys2"
+    echo "  please make sure dos2unix is installed (which includes unix2dos)"
+    echo
+    echo "just run:"
+    echo "pacman -S dos2unix"
+    echo
+    exit 1
+  else
+    echo "- Cool, we found that you have (msys2) unix2dos.exe installed."
+  fi
+fi
+function doConvert(){
+  myfiles=()
+  for n in ./{fsindex,fsindex/config,fsindex/ormus,util,util/pandoc}/*.go ; do
+    myfiles+=(${n})
+  done
+  for n in {go.mod,data/crypt.cli.go,srv.go}; do
+    myfiles+=(${n})
+  done
+  if [ "x${1}" == "xsekhm" ]; then
+    sekhm='s/tfw\.io\/Go\/fsindex/github.com\/tfwio\/sekhm/g'
+    # echo "${sekhm}"
+    for n in "${myfiles[@]}" ; do
+      echo processing ${n}
+      sed -e "${sekhm}" ${n} --in-place=''
+    done
+  elif [ "x${1}" == "xgit-revert" ]; then
+    for n in "${myfiles[@]}" ; do
+      echo processing ${n}
+      git checkout -- ${n}
+    done
+  elif [ "x${1}" == "xsed-revert" ]; then
+    sekhm='s/github.com\/tfwio\/sekhm/tfw\.io\/Go\/fsindex/g'
+    for n in "${myfiles[@]}" ; do
+      echo processing ${n}
+      sed -e "${sekhm}" ${n} --in-place=''
+    done
+  elif [ "x${1}" == "xunix2dos" ]; then
+    if [[ "x${MSYSTEM}" == "xMSYS" || "x${MSYSTEM}" == "xMINGW32" || "x${MSYSTEM}" == "xMINGW64" ]]; then
+      echo performing unix2dos \(line-breaks\)
+      for n in "${myfiles[@]}" ; do
+        unix2dos ${n} 2> /dev/null
+      done
+    fi
+  fi
+}
+
+for i in "$@"
+do
+  case "${i}" in
+    github | sekhm)
+      doConvert sekhm
+      doConvert unix2dos
+      exit 0
+      ;;
+    git-revert)
+      doConvert git-revert
+      exit 0
+      ;;
+    sed-revert)
+      doConvert sed-revert
+      doConvert unix2dos
+      exit 0
+      ;;
+    unix2dos | u2d | cr)
+      doConvert unix2dos
+      exit 0
+      ;;
+  esac
+done
+
+echo "
+Call this script from the project's root directory
+to convert all self-reference of this project from
+local development mode to github development mode
+and back.
+
+The script uses sed to to do string replacement
+on all the project's *.go files and the go.mod file.
+
+Usage
+-------------------
+
+to prepare sources for a commit to github:
+
+  ./data/scripts/cvt github
+
+to revert changes, you can either do a git-revert
+(selectively) on all *.go files and the go.mod file,
+or call —but only after rolling back the last commit
+if you performed a commit or push.
+
+  ./data/scripts/cvt git-revert
+
+Finally, to perform a revert using sed.
+If you're using msys2 \$MSYSTEM == MSYS, MINGW32 or MINGW64
+then after the github and sed-revert command unix2dos will
+be run to clean up file-endings sed converted to unix-style.
+
+  ./data/scripts/cvt sed-revert
+
+"

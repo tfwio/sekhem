@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/urfave/cli"
 
-	"tfw.io/Go/fsindex/fsindex/config"
-	"tfw.io/Go/fsindex/util"
+	"github.com/tfwio/sekhm/fsindex/config"
+	"github.com/tfwio/sekhm/util"
 )
 
 // Configuration variables

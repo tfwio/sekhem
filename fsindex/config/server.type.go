@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"tfw.io/Go/fsindex/util"
+	"github.com/tfwio/sekhm/util"
 )
 
 // Server info for JSON i/o.

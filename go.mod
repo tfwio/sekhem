@@ -1,4 +1,4 @@
-module tfw.io/Go/fsindex
+module github.com/tfwio/sekhm
 
 go 1.12
 

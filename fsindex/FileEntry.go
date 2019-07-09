@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"tfw.io/Go/fsindex/util"
+	"github.com/tfwio/sekhm/util"
 )
 
 // FileEntry ...

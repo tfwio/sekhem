@@ -22,6 +22,14 @@ do_init(){
   for i in "$@"
   do
     case "${i}" in
+      bootstrap | bs)
+        export GO111MODULE=on
+        echo "- go and get github.com/json-iterator/go (a gogonic/gin \`-tags=jsoniter\` extension)"
+        echo " ** a gogonic/gin \`-tags=jsoniter\` extension **"
+        go get github.com/json-iterator/go
+        echo "- downloading vendor-libs"
+        go mod vendor
+        ;;
       crypt | login)
         export GO111MODULE=on
         export buildmod="-mod vendor "

@@ -11,12 +11,12 @@ import (
 	"os"
 	"strings"
 
-	"tfw.io/Go/fsindex/fsindex/ormus"
+	"github.com/tfwio/sekhm/fsindex/ormus"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/mattn/go-sqlite3"
-	"tfw.io/Go/fsindex/util"
+	"github.com/tfwio/sekhm/util"
 )
 
 var (
