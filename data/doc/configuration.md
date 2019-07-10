@@ -1,3 +1,15 @@
+[home]: ../../readme.md "github.com/tfwio/sekhm/readme.md"
+[features]: features.md
+[configuration]: configuration.md
+[build]: build.md
+[usage]: usage.md
+<!-- []:  -->
+
+- [home]
+    - [features]
+    - [configuration]
+    - [usage]
+    - [build]
 
 
 Configuration
