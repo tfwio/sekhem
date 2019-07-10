@@ -88,11 +88,11 @@ func (c *Configuration) DefaultFile() string {
 
 // GetBasePath returns the server's base path; e.g. `"http://localhost:5500"`
 func (c *Configuration) GetBasePath() string {
-	return fmt.Sprintf(`%s://%s%s`, util.IIF(c.Server.TLS, "https", "http"), c.Server.Host, c.Server.Port)
+	return fmt.Sprintf(`%s://%s%s`, util.IIF(c.Server.TLS, "https", "http"), c.Server.Host, c.Port)
 }
 
 // GetPath appends `more` to the default path (see `GetBasePath`).
-// e.g. `"http://localhost:5500/<...more>"`
+// e.g. `"<http|https>://<host>:<port>/<...more>"`
 func (c *Configuration) GetPath(more ...string) string {
 	return util.Cat(c.GetBasePath(), "/", util.TrimJoin("/", more...))
 }

@@ -16,11 +16,11 @@ var (
 	// then this will always remain false.
 	UseTLS = false
 	// UsePORT is a CLI override.  If set to a value other than -1 it will be used.
-	UsePORT = -1
+	UsePORT uint = 5500
 	// UseHost is set by CLI to override the config-file Host setting..
 	UseHost = ""
 	// DefaultConfigFile — you know.  Default = `./data/conf`.
-	DefaultConfigFile = "data/conf.json"
+	DefaultConfigFile = util.Abs("./data/conf.json")
 	extMap            map[string]*fsindex.FileSpec
 	mdlMap            map[string]*fsindex.Model
 	models            []fsindex.Model

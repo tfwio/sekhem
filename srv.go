@@ -67,16 +67,17 @@ func initializeCli() {
 		cli.BoolFlag{
 			Name:        "tls",
 			Destination: &config.UseTLS,
-			Usage:       "Wether or not to use TLS.\n\tNote: if set, overrides (JSON) conf settings.",
+			Usage:       "Sets TLS on.  This only works if/when tls is set in conf.json to false, and if you have valid tls cert/key files wired into the configuration.",
 		},
 		cli.StringFlag{
 			Name:        "host",
 			Destination: &config.UseHost,
 			Usage:       "UseHost is identifies the host to use to over-ride JSON config.",
 		},
-		cli.IntFlag{
+		cli.UintFlag{
 			Name:        "port",
 			Destination: &config.UsePORT,
+			Value:       5500,
 			Usage:       "UseHost is identifies the host to use to over-ride JSON config.",
 		},
 		cli.StringFlag{
@@ -94,11 +95,12 @@ func initialize() {
 	configuration.InitializeDefaults(defaultConfPath, defaultConfTarget)
 	configuration.FromJSON(config.DefaultConfigFile) // loads (or creates conf.json and terminates application)
 	configuration.TLS = configuration.DoTLS()
+
 	if config.UseHost != "" {
-		configuration.Server.Host = config.UseHost
+		configuration.Host = config.UseHost
 	}
-	if config.UsePORT != -1 {
-		configuration.Server.Port = fmt.Sprintf(":%d", config.UsePORT)
+	if config.UsePORT != defaultPort {
+		configuration.Port = fmt.Sprintf(":%d", config.UsePORT)
 	}
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -107,18 +109,19 @@ func initialize() {
 
 	if configuration.TLS {
 		println("- TLS on")
-		if err := router.RunTLS(configuration.Server.Port, configuration.Server.Crt, configuration.Server.Key); err != nil {
+		if err := router.RunTLS(configuration.Port, configuration.Crt, configuration.Key); err != nil {
 			panic(fmt.Sprintf("router error: %s\n", err))
 		}
 	} else {
 		println("- TLS off")
-		if err := router.Run(configuration.Server.Port); err != nil {
+		if err := router.Run(configuration.Port); err != nil {
 			panic(fmt.Sprintf("router error: %s\n", err))
 		}
 	}
 }
 
 const (
-	defaultConfPath   = "multi-media\\public"
-	defaultConfTarget = "v"
+	defaultPort       uint = 5500
+	defaultConfPath        = "multi-media\\public"
+	defaultConfTarget      = "v"
 )
