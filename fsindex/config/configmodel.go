@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tfwio/sekhm/fsindex"
-	"github.com/tfwio/sekhm/util"
+	"github.com/tfwio/sekhem/fsindex"
+	"github.com/tfwio/sekhem/util"
 )
 
 func buildFileSystemModel(model *fsindex.Model) {

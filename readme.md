@@ -2,7 +2,7 @@
 [configuration]: ./data/doc/configuration.md
 [build]:         ./data/doc/build.md
 [usage]:         ./data/doc/usage.md
-[godoc]:         https://godoc.org/github.com/tfwio/sekhm "godoc.org/…/sekhm"
+[godoc]:         https://godoc.org/github.com/tfwio/sekhem "godoc.org/…/sekhem"
 <!-- []:  -->
 
 A powerful, customizable sandbox/server which allows one to hone/nurture

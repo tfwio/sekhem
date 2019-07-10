@@ -6,8 +6,8 @@ import (
 	"html/template"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tfwio/sekhm/util"
-	"github.com/tfwio/sekhm/util/pandoc"
+	"github.com/tfwio/sekhem/util"
+	"github.com/tfwio/sekhem/util/pandoc"
 )
 
 type pandocData struct {

@@ -1,3 +1,4 @@
+// srv.go is the main entry-point into the server application.
 package main
 
 import (
@@ -8,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/urfave/cli"
 
-	"github.com/tfwio/sekhm/fsindex/config"
-	"github.com/tfwio/sekhm/util"
+	"github.com/tfwio/sekhem/fsindex/config"
+	"github.com/tfwio/sekhem/util"
 )
 
 // Configuration variables

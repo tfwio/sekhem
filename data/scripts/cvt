@@ -28,7 +28,7 @@ function doConvert(){
     myfiles+=(${n})
   done
   if [ "x${1}" == "xsekhm" ]; then
-    sekhm='s/tfw\.io\/Go\/fsindex/github.com\/tfwio\/sekhm/g'
+    sekhm='s/tfw\.io\/Go\/fsindex/github.com\/tfwio\/sekhem/g'
     # echo "${sekhm}"
     for n in "${myfiles[@]}" ; do
       echo processing ${n}
@@ -58,8 +58,8 @@ function doConvert(){
 for i in "$@"
 do
   case "${i}" in
-    github | sekhm)
-      doConvert sekhm
+    github | sekhem)
+      doConvert sekhem
       doConvert unix2dos
       exit 0
       ;;

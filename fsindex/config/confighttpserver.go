@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tfwio/sekhm/fsindex"
-	"github.com/tfwio/sekhm/util"
+	"github.com/tfwio/sekhem/fsindex"
+	"github.com/tfwio/sekhem/util"
 )
 
 var (

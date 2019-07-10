@@ -1,4 +1,4 @@
-[home]: ../../readme.md "github.com/tfwio/sekhm/readme.md"
+[home]: ../../readme.md "github.com/tfwio/sekhem/readme.md"
 [features]: features.md
 [configuration]: configuration.md
 [build]: build.md

@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/tfwio/sekhm/util"
+	"github.com/tfwio/sekhem/util"
 )
 
 // CBPath is a simple callback;

@@ -5,7 +5,7 @@
 [github.com/mattn/go-sqlite3]:    https://github.com/mattn/go-sqlite3
 [github.com/jgm/pandoc]:          https://github.com/jgm/pandoc
 [github.com/jgm/pandoc/releases]: https://github.com/jgm/pandoc/releases
-[home]: ../../readme.md "github.com/tfwio/sekhm/readme.md"
+[home]: ../../readme.md "github.com/tfwio/sekhem/readme.md"
 [features]: features.md
 [configuration]: configuration.md
 [build]: build.md
@@ -25,11 +25,11 @@ Building
 go get it
 
 ```bash
-go get github.com/tfwio/sekhm
+go get github.com/tfwio/sekhem
 ```
 go to the project directory
 ```bash
-pushd ${GOPATH}/src/github.com/tfwio/sekhm
+pushd ${GOPATH}/src/github.com/tfwio/sekhem
 ```
 run the bootstrap script
 ```bash

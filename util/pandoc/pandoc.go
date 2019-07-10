@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/tfwio/sekhm/util"
+	"github.com/tfwio/sekhem/util"
 )
 
 // Settings is for pandoc configuration settings

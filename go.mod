@@ -1,4 +1,4 @@
-module github.com/tfwio/sekhm
+module github.com/tfwio/sekhem
 
 go 1.12
 
