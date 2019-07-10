@@ -14,7 +14,8 @@ type Settings struct {
 	Executable   string `json:"exe"`
 	HTMLTemplate string `json:"html"`
 	MetaTemplate string `json:"meta"`
-
+	Flags        string `json:"flags"`
+	Extensions   string `json:"extensions"`
 	// all environment variables will simply override original
 	// settings such as PATH.
 	//

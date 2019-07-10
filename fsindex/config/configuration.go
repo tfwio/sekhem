@@ -81,7 +81,7 @@ func (c *Configuration) DoTLS() bool {
 }
 
 // DefaultFile provides a absolute file-system path to the
-// default (e.g. "http://host:80/index.html") file that is served.
+// default (e.g. "<http|https>://<host>:<port>/index.html") file that is served.
 func (c *Configuration) DefaultFile() string {
 	return util.Abs(util.Cat(c.Root.Directory, "\\", c.Root.Default))
 }
@@ -147,6 +147,13 @@ func (c *Configuration) InitializeDefaults(path string, targetPath string) {
 			Name:       "Markdown",
 			Extensions: strings.Split(constExtDefaultMMD, ","),
 		},
+	}
+	c.Pandoc = pandoc.Settings{
+		Executable:   "data/pandoc/pandoc.exe",
+		HTMLTemplate: "data/pandoc/md-tpl.htm",
+		MetaTemplate: "data/pandoc/md-meta.htm",
+		Flags:        "-N", // numbered headers
+		Extensions:   "+abbreviations+auto_identifiers+autolink_bare_uris+backtick_code_blocks+bracketed_spans+definition_lists+emoji+escaped_line_breaks+example_lists+fancy_lists+fenced_code_attributes+fenced_divs+footnotes+header_attributes+inline_code_attributes+implicit_figures+implicit_header_references+inline_notes+link_attributes+mmd_title_block+multiline_tables+raw_tex+simple_tables+smart+startnum+strikeout+table_captions+yaml_metadata_block",
 	}
 	// c.info()
 	c.Prepare()

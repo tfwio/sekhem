@@ -31,10 +31,17 @@ func (c *Configuration) servePandoc(pandocTemplate string, t *template.Template,
 	route := g.Param("path")
 	action := g.Param("action")
 	if path, err := c.GetFilePath(route, action); err == nil {
+		exts, flags := c.Pandoc.Extensions, c.Pandoc.Flags
+		if exts == "" {
+			exts = "+abbreviations+auto_identifiers+autolink_bare_uris+backtick_code_blocks+bracketed_spans+definition_lists+emoji+escaped_line_breaks+example_lists+fancy_lists+fenced_code_attributes+fenced_divs+footnotes+header_attributes+inline_code_attributes+implicit_figures+implicit_header_references+inline_notes+link_attributes+mmd_title_block+multiline_tables+raw_tex+simple_tables+smart+startnum+strikeout+table_captions+yaml_metadata_block"
+		}
+		if flags == "" {
+			flags = "-N" // numbered header indexes
+		}
 		var wrap = pandoc.Create(
 			util.Abs(c.Pandoc.Executable),
-			"-N",
-			"+abbreviations+auto_identifiers+autolink_bare_uris+backtick_code_blocks+bracketed_spans+definition_lists+emoji+escaped_line_breaks+example_lists+fancy_lists+fenced_code_attributes+fenced_divs+footnotes+header_attributes+inline_code_attributes+implicit_figures+implicit_header_references+inline_notes+link_attributes+mmd_title_block+multiline_tables+raw_tex+simple_tables+smart+startnum+strikeout+table_captions+yaml_metadata_block",
+			flags,
+			exts,
 			util.Abs(pandocTemplate))
 
 		var mByteBuffer bytes.Buffer
