@@ -39,24 +39,21 @@ func (c *Configuration) GinConfig(router *gin.Engine) {
 // path allows us to refresh a single index as needed.
 func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 
-	// these files are all stored in the public directory.
-	// they are the only files we're serving specifically in
-	// that directory.
-
 	DefaultFile := util.Abs(util.Cat(c.Root.Directory, "\\", c.Root.Default))
-
 	fmt.Printf("default\n  > Target = %-18s, Source =  %s\n", c.Root.Path, DefaultFile)
 	if andServe {
 		router.StaticFile(c.Root.Path, DefaultFile)
 	}
 
 	if andServe {
+
 		println("alias-default")
 		for _, rootEntry := range c.Root.AliasDefault {
 			target := util.Cat(c.Root.Path, rootEntry)
 			router.StaticFile(target, DefaultFile)
 			fmt.Printf("  > Target = %-18s, Source = %s\n", target, c.DefaultFile())
 		}
+
 		println("root-files")
 		for _, rootEntry := range c.Root.Files {
 			target := util.Cat(c.Root.Path, rootEntry)
@@ -64,6 +61,7 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 			router.StaticFile(target, source)
 			fmt.Printf("  > Target = %-18s, Source = %s\n", target, source)
 		}
+
 		println("root-files: allowed")
 		if c.Root.Allow != "" {
 			allowed := strings.Split(c.Root.Allow, ",")
@@ -86,11 +84,13 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 
 	xdata := JSONIndex{} // xdata indexes is just a string array map.
 	xdata.Index = []string{}
+
 	println("location indexes #1: string-map")
 	for _, path := range c.Indexes {
 		jsonpath := util.WReap("/", "json", util.AbsBase(path.Source))
 		xdata.Index = append(xdata.Index, jsonpath)
 	}
+
 	println("JSON-index Target \"/json-index\"")
 	router.GET("/json-index", func(g *gin.Context) {
 		g.JSON(http.StatusOK, xdata)
@@ -109,6 +109,7 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 }
 
 func (c *Configuration) serveModelIndex(router *gin.Engine) {
+
 	println("location indexes #2: primary")
 	for _, path := range c.Indexes {
 		jsonpath := util.WReap("/", "json", util.AbsBase(path.Source))
@@ -121,6 +122,7 @@ func (c *Configuration) serveModelIndex(router *gin.Engine) {
 		}
 	}
 	router.GET("/json/:route", c.serveJSON)
+
 	println("/tag/ handler")
 	router.GET("/refresh/:route", c.refreshRouteJSON)
 	router.GET("/tag/:route/*action", func(g *gin.Context) { TagHandler(c, g) })
@@ -133,7 +135,6 @@ func (c *Configuration) serveJSON(ctx *gin.Context) {
 
 	if c.hasModel(mroute) {
 		mmdl := mdlMap[mroute]
-		fmt.Printf("SERVING JSON FOR: %v, %s\n", mroute, mmdl.FullPath)
 		ctx.JSON(http.StatusOK, &mmdl.PathEntry)
 	} else {
 		jsi := JSONIndex{Index: []string{fmt.Sprintf("COULD NOT find model for index: %s", mroute)}}
