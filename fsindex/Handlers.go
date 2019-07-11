@@ -27,6 +27,22 @@ type Handlers struct {
 	ChildFile FileHandler
 }
 
+func (p *PathEntry) getFilter(rootPathEntry *Model) map[string]*FileSpec {
+	extmap := make(map[string]*FileSpec)
+
+	ff := &rootPathEntry.FileFilter
+	for i := 0; i < len(*ff); i++ {
+		fx := &rootPathEntry.FileFilter[i]
+		for j := 0; j < len(fx.Extensions); j++ {
+			ext := fx.Extensions[j]
+			if extmap[ext] != nil {
+				extmap[ext] = fx
+			}
+		}
+	}
+	return extmap
+}
+
 // RefreshCB refreshes child directories and files.
 // parameter `rootPathEntry`: root-path entry.
 // parameter `counter (*int32)`: pointer to our indexing integer (counter).
@@ -67,6 +83,8 @@ func (p *PathEntry) RefreshCB(rootPathEntry *Model, counter *(int32), cbPath *CB
 		return
 	}
 
+	pathExts := p.getFilter(rootPathEntry)
+
 	// FILE PATHS
 	for _, mFullPath := range mPaths {
 
@@ -77,10 +95,8 @@ func (p *PathEntry) RefreshCB(rootPathEntry *Model, counter *(int32), cbPath *CB
 		}
 
 		if !fileinfo.IsDir() {
-
-			for i := 0; i < len(mRoot.FileFilter); i++ {
-
-				if mRoot.FileFilter[i].Match(mFullPath) {
+			for ext := range pathExts {
+				if pathExts[ext].Match(mFullPath) {
 
 					var child = FileEntry{
 						Parent:    p,
@@ -95,7 +111,7 @@ func (p *PathEntry) RefreshCB(rootPathEntry *Model, counter *(int32), cbPath *CB
 					} else {
 						child.Path = util.UnixSlash(child.RootedPath(mRoot))
 					}
-
+					// array.
 					p.Files = append(p.Files, child)
 					if cbFile != nil {
 						if (*cbFile)(mRoot, &child) {
@@ -103,7 +119,6 @@ func (p *PathEntry) RefreshCB(rootPathEntry *Model, counter *(int32), cbPath *CB
 						}
 						// println(fmt.Sprintf("  - %s", child.Base()))
 					}
-
 				}
 			}
 		}
