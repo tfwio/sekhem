@@ -57,12 +57,25 @@ func Touch(path string) bool {
 	return true
 }
 
+// GetDirectoryE expects a file as input and returns
+// its parent directory.
+// if input is a directory, I'm wondering what happens.
+func GetDirectoryE(path string) (string, error) {
+	dir, err := filepath.Abs(filepath.Dir(path))
+	return dir, err
+}
+
 // GetDirectory expects a file as input and returns
 // its parent directory.
 // if input is a directory, I'm wondering what happens.
-func GetDirectory(path string) (string, error) {
-	dir, err := filepath.Abs(filepath.Dir(path))
-	return dir, err
+//
+// WARNING: **THIS FILE RETURNS A EMPTY STRING ON ERROR!**
+// use `filepath.Dir` or `util.GetDirectoryE`!
+func GetDirectory(path string) string {
+	if dir, err := filepath.Abs(filepath.Dir(path)); err != nil {
+		return dir
+	}
+	return ""
 }
 
 // StripFileExtension ...yep.
@@ -150,6 +163,11 @@ func CatArrayPad(pStrArray []string, pad string) string {
 		buffer.WriteString(str + pad)
 	}
 	return strings.Trim(buffer.String(), pad) // fmt.Println(buffer.String())
+}
+
+// CatPath concatenates a path-string
+func CatPath(input ...string) string {
+	return Abs(CatArrayPad(input, "/"))
 }
 
 // CatArray - Concatenate a string, or empty string.
