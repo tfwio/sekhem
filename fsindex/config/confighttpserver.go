@@ -21,11 +21,15 @@ var (
 	UseHost = ""
 	// DefaultConfigFile — you know.  Default = `./data/conf`.
 	DefaultConfigFile = util.Abs("./data/conf.json")
-	extMap            map[string]*fsindex.FileSpec
-	mdlMap            map[string]*fsindex.Model
-	models            []fsindex.Model
-	xCounter          int32
-	fCounter          int32
+	// DefaultDatabase this is our default database (file-path: `[configfile-dir]/ormus.db`).
+	DefaultDatabase = util.CatPath(util.GetDirectory(DefaultConfigFile), "ormus.db")
+	// DefaultDatasys default data system or provider ('sqlite3').
+	DefaultDatasys = "sqlite3"
+	extMap         map[string]*fsindex.FileSpec
+	mdlMap         map[string]*fsindex.Model
+	models         []fsindex.Model
+	xCounter       int32
+	fCounter       int32
 )
 
 // GinConfig configures gin.Engine.
@@ -91,21 +95,27 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 		xdata.Index = append(xdata.Index, jsonpath)
 	}
 
-	println("JSON-index Target \"/json-index\"")
-	router.GET("/json-index", func(g *gin.Context) {
-		g.JSON(http.StatusOK, xdata)
-	})
+	if andServe {
 
-	router.GET("/pan/:path/*action", func(g *gin.Context) {
-		c.servePandoc(c.Pandoc.HTMLTemplate, pandoctemplate, g)
-	})
+		println("JSON-index Target \"/json-index\"")
+		router.GET("/json-index", func(g *gin.Context) {
+			g.JSON(http.StatusOK, xdata)
+		})
 
-	router.GET("/meta/:path/*action", func(g *gin.Context) {
-		c.servePandoc(c.Pandoc.MetaTemplate, pandoctemplate, g)
-	})
+		router.GET("/pan/:path/*action", func(g *gin.Context) {
+			c.servePandoc(c.Pandoc.HTMLTemplate, pandoctemplate, g)
+		})
 
+		router.GET("/meta/:path/*action", func(g *gin.Context) {
+			c.servePandoc(c.Pandoc.MetaTemplate, pandoctemplate, g)
+		})
+
+	}
 	c.initializeModels()
-	c.serveModelIndex(router)
+
+	if andServe {
+		c.serveModelIndex(router)
+	}
 }
 
 func (c *Configuration) serveModelIndex(router *gin.Engine) {

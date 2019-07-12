@@ -6,10 +6,14 @@ import (
 	"os"
 	"path/filepath"
 
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/mattn/go-sqlite3"
+
 	"github.com/gin-gonic/gin"
 	"github.com/urfave/cli"
 
 	"github.com/tfwio/sekhem/fsindex/config"
+	"github.com/tfwio/sekhem/fsindex/ormus"
 	"github.com/tfwio/sekhem/util"
 )
 
@@ -33,11 +37,11 @@ func initializeCli() {
 	mCli.Authors = []cli.Author{cli.Author{Name: "tfw; et alia" /*, Email: "tfwroble@gmail.com"}, cli.Author{Name: "Et al."*/}}
 	mCli.Version = "v0.0.0"
 	mCli.Copyright = "tfwio.github.com/go-fsindex\n\n   This is free, open-source software.\n   disclaimer: use at own risk."
-	mCli.Action = func(*cli.Context) { initialize() }
+	mCli.Action = func(*cli.Context) { initialize(true) }
 	mCli.Commands = []cli.Command{
 		cli.Command{
 			Name:        "run",
-			Action:      func(*cli.Context) { initialize() },
+			Action:      func(*cli.Context) { initialize(true) },
 			Usage:       "Runs the server.",
 			Description: "Default operation.",
 			Aliases:     []string{"go"},
@@ -91,7 +95,11 @@ func initializeCli() {
 	mCli.Run(os.Args)
 }
 
-func initialize() {
+// initializeJSONConf loads JSON configuration and
+// sets our data source.  No file indexing.
+//
+// From here we can execute database operations.
+func initializeJSONConf() {
 
 	configuration.InitializeDefaults(defaultConfPath, defaultConfTarget)
 	configuration.FromJSON(config.DefaultConfigFile) // loads (or creates conf.json and terminates application)
@@ -103,10 +111,25 @@ func initialize() {
 	if config.UsePORT != defaultPort {
 		configuration.Port = fmt.Sprintf(":%d", config.UsePORT)
 	}
+
+	ormus.SetSource(configuration.Database, configuration.DatabaseType)
+}
+
+// initialize can be called with or without starting the server.
+// First, this function loads JSON conf followed by
+// building up all the file-indexes and finally running
+// the gin-server.
+func initialize(andServe bool) {
+
+	initializeJSONConf()
+
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+	configuration.GinConfigure(andServe, router)
 
-	configuration.GinConfig(router)
+	if !andServe {
+		return
+	}
 
 	if configuration.TLS {
 		println("- TLS on")

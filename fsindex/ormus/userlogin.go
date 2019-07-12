@@ -8,12 +8,6 @@ import (
 	"github.com/tfwio/sekhem/util"
 )
 
-var (
-	datasource string
-)
-
-// _ "github.com/mattn/go-sqlite3"
-
 // User structure
 type User struct {
 	ID   int64  `gorm:"auto_increment;unique_index;primary_key;column:id"`
@@ -23,8 +17,9 @@ type User struct {
 }
 
 // SetSource allows a external library to set the local datasource.
-func SetSource(source string) {
+func SetSource(source string, sys string) {
 	datasource = source
+	datasys = sys
 }
 
 // EnsureTableUsers creates table [users] if not exist.
@@ -64,8 +59,10 @@ func (u *User) Get() {
 }
 
 // CreateSession is a test to attempt to save a session into the sessions table.
-func (u *User) CreateSession() {
-	sess := Session{Created: time.Now(), UserID: u.ID, SessID: util.NewSaltString(32)}
+func (u *User) CreateSession() string {
+	t := time.Now()
+	salt := util.NewSaltString(32)
+	sess := Session{Created: t, UserID: u.ID, SessID: salt, Expires: t.Add(defaultSessionLength)}
 	db, err := gorm.Open("sqlite3", datasource)
 	defer db.Close()
 	if err != nil {
@@ -74,11 +71,13 @@ func (u *User) CreateSession() {
 		db.Create(&sess)
 		fmt.Printf("- session should have been created; sessid=%s\n", sess.SessID)
 	}
+	return salt
 }
 
 // GetSessions gets sessions existing sessions for a user
 func (u *User) GetSessions() {
-	sess := Session{Created: time.Now(), UserID: u.ID, SessID: util.NewSaltString(32)}
+	t := time.Now()
+	sess := Session{Created: t, UserID: u.ID, SessID: util.NewSaltString(32), Expires: t.Add(defaultSessionLength)}
 	db, err := gorm.Open("sqlite3", datasource)
 	defer db.Close()
 	if err != nil {

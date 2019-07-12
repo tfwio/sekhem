@@ -64,7 +64,7 @@ func main() {
 		return
 	}
 
-	ormus.SetSource(*fdb)
+	ormus.SetSource(*fdb, "sqlite3")
 	ormus.EnsureTableUsers()
 	ormus.EnsureTableSessions()
 

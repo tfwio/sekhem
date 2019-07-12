@@ -16,14 +16,15 @@ import (
 
 // Configuration is for JSON i/o.
 type Configuration struct {
-	Server     `json:"serv"`
-	Pandoc     pandoc.Settings    `json:"pandoc"`
-	Root       RootConfig         `json:"root"`
-	Locations  []StaticPath       `json:"stat,omitempty"`
-	Indexes    []IndexPath        `json:"indx,omitempty"`
-	Extensions []fsindex.FileSpec `json:"spec,omitempty"`
-	IndexCfg   fsindex.Settings   `json:"index-cfg,omitempty"`
-	Database   string             `json:"db,omitempty"`
+	Server       `json:"serv"`
+	Pandoc       pandoc.Settings    `json:"pandoc"`
+	Root         RootConfig         `json:"root"`
+	Locations    []StaticPath       `json:"stat,omitempty"`
+	Indexes      []IndexPath        `json:"indx,omitempty"`
+	Extensions   []fsindex.FileSpec `json:"spec,omitempty"`
+	IndexCfg     fsindex.Settings   `json:"index-cfg,omitempty"`
+	Database     string             `json:"db.src,omitempty"` // relative to the configuration file
+	DatabaseType string             `json:"db.sys,omitempty"`
 }
 
 // GetFilePath only checks to see if we have indexed (configuration.Index)
