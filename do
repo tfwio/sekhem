@@ -32,7 +32,7 @@ do_init(){
         ;;
       crypt | login)
         export GO111MODULE=on
-        export buildmod="-mod vendor "
+        echo go build -o login.exe data/crypt.cli.go
         go build -o login.exe data/crypt.cli.go
         ;;
       mod)
