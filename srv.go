@@ -112,7 +112,7 @@ func initializeJSONConf() {
 		configuration.Port = fmt.Sprintf(":%d", config.UsePORT)
 	}
 
-	ormus.SetSource(configuration.Database, configuration.DatabaseType)
+	ormus.SetDefaults(configuration.Database, configuration.DatabaseType, -1)
 }
 
 // initialize can be called with or without starting the server.
