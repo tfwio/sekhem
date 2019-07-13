@@ -27,6 +27,11 @@ type Configuration struct {
 	DatabaseType string             `json:"db.sys,omitempty"`
 }
 
+// SessionHost gets a simple string that is used in our sessions db.
+func (c *Configuration) SessionHost() string {
+	return fmt.Sprintf("%s%s", c.Host, c.Port)
+}
+
 // GetFilePath only checks to see if we have indexed (configuration.Index)
 // the path in order to obtain/return it.
 func (c *Configuration) GetFilePath(route string, action string) (string, error) {
