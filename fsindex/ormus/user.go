@@ -220,21 +220,7 @@ func (u *User) SessionRefresh(host string, client interface{}) interface{} {
 	return nil
 }
 
-// CookieSession retrieves a cookie provided client-host.
-func CookieSession(host string, client interface{}) (Session, bool) {
-	clistr := getClientString(client)
-	sess := Session{}
-	db, err := iniC("error(validate-session) loading database\n")
-	if err {
-		return sess, false
-	}
-	db.LogMode(true)
-	defer db.Close()
-	db.First(&sess, "[cli-key] = ? AND [host] = ?", clistr, host)
-	return sess, db.RowsAffected != 0
-}
-
-// UserSession gets a session for the user against the client/cookie.
+// UserSession checks a session for the user against the client/cookie.
 // NOTE THAT USER ID MUST BE PRESENT!
 func (u *User) UserSession(host string, client interface{}) (Session, bool) {
 	clistr := getClientString(client)

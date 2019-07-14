@@ -73,7 +73,7 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 			yn := false
 			ck := false
 			if isunsafe(context.Request.RequestURI) {
-				yn = ormus.SessionValidateCookie(c.SessionHost("sekhem"), context.Request)
+				yn = ormus.SessionCookieValidate(c.SessionHost("sekhem"), context.Request)
 				ck = true
 				fmt.Printf("--> session? %v %s\n", yn, context.Request.RequestURI)
 				fmt.Printf("==> CHECK: %v, VALID: %v\n", ck, yn)
@@ -126,7 +126,7 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 		router.GET("/logout/", func(g *gin.Context) {
 			sh := c.SessionHost("sekhem")
 
-			if sess, err := ormus.CookieSession(sh, g.Request); !err {
+			if sess, err := ormus.SessionCookie(sh, g.Request); !err {
 				fmt.Printf("==> SESSION EXISTS; LOGGIN OUT")
 				g.SetCookie(sh, sess.SessID, 0, "/", "", false, true)
 				sess.Expires = time.Now()
