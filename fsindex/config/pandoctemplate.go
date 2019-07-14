@@ -47,7 +47,6 @@ func (c *Configuration) servePandoc(pandocTemplate string, t *template.Template,
 		var mByteBuffer bytes.Buffer
 		if err := wrap.Do(path, &mByteBuffer, nil, true); err == nil {
 			html := pandocData{Document: mByteBuffer.String()}
-			fmt.Println(html.Document)
 			if e := t.ExecuteTemplate(g.Writer, "pandoc", html); e != nil {
 				fmt.Println("  - pandoc error:", e)
 			}
