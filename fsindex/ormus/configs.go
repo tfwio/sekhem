@@ -2,7 +2,10 @@ package ormus
 
 import (
 	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/tfwio/sekhem/util"
 
 	"github.com/jinzhu/gorm"
 )
@@ -88,6 +91,8 @@ func SetDefaults(source string, sys string, saltSize int) {
 	if saltSize != -1 {
 		saltsize = saltSize
 	}
+	EnsureTableUsers()
+	EnsureTableSessions()
 }
 
 // returns calculated duration or on error the default session length '2hr'
@@ -111,4 +116,22 @@ func loginCheckUP(user string, pass string) bool {
 		println("- you must supply a password > len(4) chars long")
 	}
 	return result
+}
+
+func getClientString(client interface{}) string {
+
+	clistr := ""
+	// cess := ""
+	switch c := client.(type) {
+	case *http.Request:
+		clistr = util.ToUBase64(c.RemoteAddr)
+		break
+	case string:
+		clistr = util.ToUBase64(c)
+		break
+	default:
+		clistr = util.ToBase64(unknownclient)
+		break
+	}
+	return clistr
 }

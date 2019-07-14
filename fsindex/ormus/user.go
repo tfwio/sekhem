@@ -43,12 +43,19 @@ func UserGetList() map[int64]User {
 // ByName gets a user by [name].
 // If `u` properties are set, then those are defaulted in FirstOrInit
 func (u *User) ByName(name string) bool {
+	fmt.Printf("--> looking for %s\n", name)
+
 	db, err := iniC("error(user-by-name) loading database\n")
+	result := false
 	defer db.Close()
 	if !err {
-		db.FirstOrInit(u, User{Name: name})
+		db.Where("[user] = ?", name).First(u)
+		if u.Name == name {
+			result = true
+		}
 	}
-	return u.Name == name
+	fmt.Printf("!-> FOUND %s, %d\n", u.Name, u.ID)
+	return result
 }
 
 // ByID gets a user by [id].
@@ -73,20 +80,22 @@ func (u *User) CreateSession32(r interface{}, hours int, host string) (bool, Ses
 func (u *User) CreateSession(r interface{}, hours int, host string, saltSize int) (bool, Session) {
 
 	t := time.Now()
-	salt := util.NewSaltString(saltSize)
+	ss := saltsize
+	if saltSize != -1 {
+		ss = saltSize
+	}
 	result := false
-
 	sess := Session{
 		Host:    host,
 		UserID:  u.ID,
-		SessID:  salt,
+		SessID:  util.ToUBase64(util.NewSaltString(ss)),
 		Created: t,
 		Expires: t.Add(durationHrs(hours)),
 	}
 
 	switch d := r.(type) {
-	case *http.Response:
-		sess.Client = util.ToBase64(d.Request.RemoteAddr)
+	case *http.Request:
+		sess.Client = util.ToBase64(d.RemoteAddr)
 	case string:
 		sess.Client = util.ToBase64(d)
 	default:
@@ -120,22 +129,20 @@ func (u *User) Create(name string, pass string, saltSize int) int {
 		mysalt = saltSize
 	}
 
+	if u.ByName(name) {
+		return 1
+	}
+
 	db, err := u.iniC("error(user-create): loading database\n")
 	if err {
 		return -1
-	}
-
-	tempUser := User{ID: -1}
-	db.FirstOrInit(&tempUser, User{Name: name})
-	if tempUser.ID != -1 {
-		db.Close()
-		return 1 // user exists
 	}
 
 	bsalt := util.NewSaltCSRNG(mysalt)
 	u.Name = name
 	u.Salt = util.BytesToBase64(bsalt)
 	u.Hash = util.BytesToBase64(util.GetPasswordHash(pass, bsalt))
+	fmt.Printf("--> %s, %s, %v\n", u.Name, pass, u.Salt)
 
 	defer db.Close()
 	db.Create(u)
@@ -185,39 +192,67 @@ func (u *User) ValidatePassword(pass string) bool {
 	return result
 }
 
-// ValidateSession checks against a provided salt and hash.
-// BUT FIRST, it checks for a valid session?
-func (u *User) ValidateSession(host string, client interface{}) bool {
+// SessionRefresh Extend existing session.
+// if succeeds, result is the created session, otherwise nil.
+func (u *User) SessionRefresh(host string, client interface{}) interface{} {
+	// println("--> SessionRefresh")
+	// c := client.(*http.Request)
+	clistr := getClientString(client)
+	// fmt.Printf("cli-key: %s, host: %s\n", clistr, host)
 
+	sess := Session{}
+	db, err := u.iniC("error(validate-session) loading database\n")
+	if err {
+		return nil
+	}
+	db.LogMode(true)
+	defer db.Close()
+	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [user_id] = ?", clistr, host, u.ID)
+	if sess.UserID == u.ID {
+		sess.Expires = time.Now().Add(durationHrs(2))
+		db.Save(sess)
+		// fmt.Printf("--> UPDATED SESS! user_id match %v, %v\n", sess.UserID, u.ID)
+		return sess
+	}
+	// fmt.Printf("--> NO user_id match %v, %v\n", sess.UserID, u.ID)
+	return nil
+}
+
+// ValidateSessionByUserID checks against a provided salt and hash.
+// BUT FIRST, it checks for a valid session?
+func (u *User) ValidateSessionByUserID(host string, client interface{}) bool {
+
+	println("--> ValidateSessionByUserID")
+
+	clistr := getClientString(client)
+	fmt.Printf("cli-key: %s, host: %s\n", clistr, host)
+
+	result := false
+
+	sess := Session{}
 	db, err := u.iniC("error(validate-session) loading database\n")
 	if err {
 		return false
 	}
-
-	clistr := ""
-	// cess := ""
-	switch c := client.(type) {
-	case *http.Response:
-		clistr = util.ToUBase64(c.Request.RemoteAddr)
-	case string:
-		clistr = util.ToUBase64(c)
-	default:
-		clistr = util.ToBase64(unknownclient)
-	}
-
-	var sess Session
-	db.Where("[client] = ? AND [host] = ?", clistr, host).FirstOrInit(&sess, Session{ID: -1})
+	db.LogMode(true)
 	defer db.Close()
-	if sess.ID == -1 {
-		return false
+	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [user_id] = ?", clistr, host, u.ID)
+	if sess.UserID == u.ID {
+		result = true
+		fmt.Printf("--> user_id match %v, %v\n", sess.UserID, u.ID)
+	} else {
+		fmt.Printf("--> NO user_id match %v, %v\n", sess.UserID, u.ID)
 	}
 
 	t := time.Now()
-	if t.After(sess.Expires) {
-		return false
+	if !t.Before(sess.Expires) {
+		fmt.Println("--> session isn't expired")
+		result = false
+	} else {
+		fmt.Println("--> session is expired")
 	}
 
-	return true
+	return result
 }
 
 // EnsureTableUsers creates table [users] if not exist.

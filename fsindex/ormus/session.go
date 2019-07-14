@@ -2,6 +2,8 @@ package ormus
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -79,4 +81,36 @@ func SessionFind(sessid string, host string) (Session, User) {
 		println("coundn't find session")
 	}
 	return s, u
+}
+
+// SessionValidateCookie checks against a provided salt and hash.
+// BUT FIRST, it checks for a valid session?
+func SessionValidateCookie(host string, client *http.Request) bool {
+
+	clistr := getClientString(client)
+	sessid := ""
+	if xid, e := client.Cookie(host); e == nil {
+		sessid, _ = url.QueryUnescape(xid.Value)
+	}
+
+	if sessid == "" {
+		return false
+	}
+
+	result := false
+
+	db, err := iniC("error(validate-session) loading database\n")
+	if err {
+		return false
+	}
+	db.LogMode(true)
+	sess := Session{}
+	defer db.Close()
+	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [sessid] = ?", clistr, host, sessid)
+	fmt.Printf("%s\n%s\n", sessid, sess.SessID)
+	if sess.SessID == sessid {
+		result = true
+	}
+
+	return result
 }
