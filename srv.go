@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/tfwio/sekhem/fsindex/ormus"
+
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 
@@ -13,7 +15,6 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/tfwio/sekhem/fsindex/config"
-	"github.com/tfwio/sekhem/fsindex/ormus"
 	"github.com/tfwio/sekhem/util"
 )
 
@@ -104,6 +105,10 @@ func initializeJSONConf() {
 	configuration.InitializeDefaults(defaultConfPath, defaultConfTarget)
 	configuration.FromJSON(config.DefaultConfigFile) // loads (or creates conf.json and terminates application)
 	configuration.TLS = configuration.DoTLS()
+	ormus.SetDefaults(
+		util.Abs(util.CatPath(util.GetDirectory(util.Abs(config.DefaultConfigFile)), configuration.Database)),
+		configuration.DatabaseType,
+		-1)
 
 	if config.UseHost != "" {
 		configuration.Host = config.UseHost
@@ -112,7 +117,6 @@ func initializeJSONConf() {
 		configuration.Port = fmt.Sprintf(":%d", config.UsePORT)
 	}
 
-	ormus.SetDefaults(configuration.Database, configuration.DatabaseType, -1)
 }
 
 // initialize can be called with or without starting the server.

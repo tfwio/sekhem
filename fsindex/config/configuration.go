@@ -28,8 +28,8 @@ type Configuration struct {
 }
 
 // SessionHost gets a simple string that is used in our sessions db.
-func (c *Configuration) SessionHost() string {
-	return fmt.Sprintf("%s%s", c.Host, c.Port)
+func (c *Configuration) SessionHost(input string) string {
+	return fmt.Sprintf("%s%s", input, strings.TrimLeft(c.Port, ":"))
 }
 
 // GetFilePath only checks to see if we have indexed (configuration.Index)
