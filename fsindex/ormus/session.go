@@ -3,7 +3,6 @@ package ormus
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -36,45 +35,13 @@ func EnsureTableSessions() {
 	// }
 }
 
-// SessionCLIList returns a  sessions for CLI.
-// The method first fetches a list of User elements
-// then reports the Sessions with user-data (name).
-func SessionCLIList() []Session {
-	var users []User
-	var sessions []Session
-	db, err := iniC("error(session-cli-list) loading db\n")
-
-	defer db.Close()
-	if !err {
-		usermap := UserGetList()
-		for m, x := range users {
-			fmt.Printf("--> %04d: %s\n", m, x.Name)
-			usermap[x.ID] = x
-		}
-		// list sessions
-		db.Find(&sessions)
-		fmt.Printf("--> found %d entries\n", len(sessions))
-		for _, x := range sessions {
-			fmt.Printf("--> '%s'\n  CRD: %s\n  EXP: %s\n  SID: %s\n",
-				usermap[x.UserID].Name,
-				x.Created.Format("20060102_1504.005"),
-				x.Expires.Format("20060102_1504.005"),
-				x.SessID)
-		}
-	}
-	return sessions
-}
-
 // SessionValidateCookie checks against a provided salt and hash.
 // BUT FIRST, it checks for a valid session?
-func SessionValidateCookie(host string, client *http.Request) bool {
+func SessionValidateCookie(cookieName string, client *http.Request) bool {
 
 	clistr := getClientString(client)
-	sessid := ""
-	if xid, e := client.Cookie(host); e == nil {
-		sessid, _ = url.QueryUnescape(xid.Value)
-	}
 
+	sessid := getCookieValue(cookieName, client)
 	if sessid == "" {
 		return false
 	}
@@ -88,7 +55,7 @@ func SessionValidateCookie(host string, client *http.Request) bool {
 	db.LogMode(true)
 	sess := Session{}
 	defer db.Close()
-	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [sessid] = ?", clistr, host, sessid)
+	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [sessid] = ?", clistr, cookieName, sessid)
 	fmt.Printf("%s\n%s\n", sessid, sess.SessID)
 	if sess.SessID == sessid {
 		result = true
