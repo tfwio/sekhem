@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
-
-	"github.com/tfwio/sekhem/fsindex/ormus"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tfwio/sekhem/fsindex"
@@ -27,32 +24,13 @@ var (
 	// DefaultDatabase this is our default database (file-path: `[configfile-dir]/ormus.db`).
 	DefaultDatabase = util.CatPath(util.GetDirectory(DefaultConfigFile), "ormus.db")
 	// DefaultDatasys default data system or provider ('sqlite3').
-	DefaultDatasys  = "sqlite3"
-	extMap          map[string]*fsindex.FileSpec
-	mdlMap          map[string]*fsindex.Model
-	models          []fsindex.Model
-	xCounter        int32
-	fCounter        int32
-	_safeHandlers   = wrapup(strings.Split("login,register", ",")...)
-	_unSafeHandlers = wrapup(strings.Split("json,json-index,pan,meta,json,refresh,tag,jtag", ",")...)
+	DefaultDatasys = "sqlite3"
+	extMap         map[string]*fsindex.FileSpec
+	mdlMap         map[string]*fsindex.Model
+	models         []fsindex.Model
+	xCounter       int32
+	fCounter       int32
 )
-
-func isunsafe(input string) bool {
-	for _, unsafe := range _unSafeHandlers {
-		if strings.Contains(input, unsafe) {
-			return true
-		}
-	}
-	return false
-}
-func wrapup(inputs ...string) []string {
-	data := inputs
-	for i, hander := range data {
-		data[i] = strings.TrimRight(util.WReapLeft("/", hander), "/")
-		// println(data[i])
-	}
-	return data
-}
 
 // GinConfig configures gin.Engine.
 func (c *Configuration) GinConfig(router *gin.Engine) {
@@ -69,19 +47,10 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 	fmt.Printf("default\n  > Target = %-18s, Source =  %s\n", c.Root.Path, DefaultFile)
 	if andServe {
 
-		router.Use(func(context *gin.Context) {
-			yn := false
-			ck := false
-			if isunsafe(context.Request.RequestURI) {
-				yn = ormus.SessionCookieValidate(c.SessionHost("sekhem"), context.Request)
-				ck = true
-				fmt.Printf("--> session? %v %s\n", yn, context.Request.RequestURI)
-				fmt.Printf("==> CHECK: %v, VALID: %v\n", ck, yn)
-			}
-			context.Set("valid", yn)
-			context.Next() // after request
-			fmt.Printf("--> URI: %s\n", context.Request.RequestURI)
-		})
+		router.Use(c.sessMiddleware)
+		router.GET("/logout/", c.serveLogout)
+		router.GET("/login/", c.serveLogin)
+		router.GET("/register/", c.serveRegister)
 
 		router.StaticFile(c.Root.Path, DefaultFile)
 
@@ -118,99 +87,6 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 			router.StaticFS(tgt.Target, gin.Dir(util.Abs(tgt.Source), tgt.Browsable))
 			fmt.Printf("  > Target = %-18s, Source = %s\n", tgt.Target, tgt.Source)
 		}
-	}
-
-	if andServe {
-
-		// we want to create a user and a session
-		router.GET("/logout/", func(g *gin.Context) {
-			sh := c.SessionHost("sekhem")
-
-			if sess, err := ormus.SessionCookie(sh, g.Request); !err {
-				fmt.Printf("==> SESSION EXISTS; LOGGIN OUT")
-				g.SetCookie(sh, sess.SessID, 0, "/", "", false, true)
-				sess.Expires = time.Now()
-				sess.Save()
-				g.JSON(
-					http.StatusOK,
-					&LogonModel{
-						Action: "logout",
-						Detail: "Session exists; logged out.",
-						Status: true})
-			} else {
-				fmt.Printf("==> SESSION NOT EXIST; NOTHING TO DO")
-				g.JSON(
-					http.StatusOK,
-					&LogonModel{
-						Action: "logout",
-						Detail: "Session not exist; nothing to do.",
-						Status: false})
-			}
-		})
-
-		router.GET("/login/", func(g *gin.Context) {
-
-			usr := g.Request.FormValue("user")
-			j := LogonModel{Action: "login", Detail: "session creation failed.", Status: false}
-			sh := c.SessionHost("sekhem")
-
-			u := ormus.User{}
-			if !u.ByName(usr) {
-				println("--> NO user found!")
-				j.Detail = "No user record."
-				j.Status = false
-			} else if u.ValidateSessionByUserID(sh, g.Request) {
-				xs := u.SessionRefresh(sh, g.Request)
-				if xs != nil {
-					ss := xs.(ormus.Session) // d, _ := time.ParseDuration("12h") // exp := time.Now().Add(d)
-					g.SetCookie(c.SessionHost("sekhem"), ss.SessID, 3600*12, "/", "", false, true)
-				}
-				j.Detail = "Prior session exists; updated."
-				j.Status = true
-			} else {
-				hr := 12
-				fmt.Printf("--> Create session for user: %v\n", u.Name)
-				if e, sess := u.CreateSession(g.Request, hr, sh, -1); !e {
-					g.SetCookie(sh, sess.SessID, 12*3600, "/", "", false, true)
-					j.Detail = "Session created."
-					j.Status = true
-				} else {
-					j.Detail = "Session creation failed"
-				}
-			}
-			g.JSON(http.StatusOK, j)
-		})
-
-		router.GET("/register/", func(g *gin.Context) {
-
-			j := LogonModel{Action: "register", Detail: "user creation failed.", Status: false}
-			usr := g.Request.FormValue("user")
-			pas := g.Request.FormValue("pass")
-
-			u := ormus.User{}
-			fmt.Printf("!-> %s, %s, %v\n", usr, pas, -1)
-			if e := u.Create(usr, pas, -1); e != 0 {
-				switch e {
-				case -1:
-					j.Detail = "Failed to load db."
-				case 1:
-					j.Detail = "User record already exists."
-				}
-			} else {
-				hr := 12
-				sh := c.SessionHost("sekhem")
-				e, sess := u.CreateSession(g.Request, hr, sh, -1)
-				if !e {
-					g.SetCookie(sh, sess.SessID, 12*3600, "/", "", false, true)
-					j.Status = true
-					j.Detail = "User and Session created."
-				} else {
-					j.Status = false
-					j.Detail = "User created; session failed."
-				}
-			}
-			g.JSON(http.StatusOK, j)
-		})
 
 		router.GET("/json-index", func(g *gin.Context) {
 
