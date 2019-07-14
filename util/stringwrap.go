@@ -17,7 +17,7 @@ func Wrap(wrap string, text string) string {
 
 // WrapLeft puts `wrap` at the beginning of the string if not already present.
 func WrapLeft(separator string, text string) string {
-	result := text
+	result := strings.TrimLeft(text, separator)
 	if strings.Index(result, separator) != 0 {
 		result = Cat(separator, result)
 	}
@@ -26,7 +26,7 @@ func WrapLeft(separator string, text string) string {
 
 // WrapRight puts `wrap` at the end of the string if not already present.
 func WrapRight(separator string, text string) string {
-	result := text
+	result := strings.TrimRight(text, separator)
 	if strings.LastIndex(result, separator) != (len(result) - 1) {
 		result = Cat(result, separator)
 	}
