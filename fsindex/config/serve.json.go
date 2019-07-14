@@ -7,6 +7,7 @@ type JSONIndex struct {
 
 // LogonModel responds to a login action such as "/login/" or (perhaps) "/login-refresh/"
 type LogonModel struct {
-	Message string `json:"message"`
-	Detail  string `json:"detail"`
+	Action string `json:"action"`
+	Status bool   `json:"status"`
+	Detail string `json:"detail"`
 }
