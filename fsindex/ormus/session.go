@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
-	"github.com/jinzhu/gorm"
 )
 
 // Session represents users who are logged in.
@@ -65,22 +63,6 @@ func SessionCLIList() []Session {
 		}
 	}
 	return sessions
-}
-
-// SessionFind attempts to find a session from SessionID
-func SessionFind(sessid string, host string) (Session, User) {
-	var s Session
-	var u User
-	db, err := gorm.Open(datasys, datasource)
-	defer db.Close()
-	if err != nil {
-		db.Where("[sessid] = ?", sessid).First(&s)
-		db.Where("[id] = ?", s.UserID).First(&u)
-		// Where("")
-	} else {
-		println("coundn't find session")
-	}
-	return s, u
 }
 
 // SessionValidateCookie checks against a provided salt and hash.
