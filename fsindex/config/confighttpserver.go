@@ -48,9 +48,9 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 	if andServe {
 
 		router.Use(c.sessMiddleware)
-		router.GET("/logout/", c.serveLogout)
-		router.GET("/login/", c.serveLogin)
-		router.GET("/register/", c.serveRegister)
+		router.POST("/logout/", c.serveLogout)
+		router.POST("/login/", c.serveLogin)
+		router.POST("/register/", c.serveRegister)
 
 		router.StaticFile(c.Root.Path, DefaultFile)
 
