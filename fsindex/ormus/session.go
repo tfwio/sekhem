@@ -40,8 +40,9 @@ func EnsureTableSessions() {
 func SessionValidateCookie(cookieName string, client *http.Request) bool {
 
 	clistr := getClientString(client)
+	cookie := getCookie(cookieName, client)
+	sessid := cookieValue(cookie)
 
-	sessid := getCookieValue(cookieName, client)
 	if sessid == "" {
 		return false
 	}
@@ -56,10 +57,23 @@ func SessionValidateCookie(cookieName string, client *http.Request) bool {
 	sess := Session{}
 	defer db.Close()
 	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [sessid] = ?", clistr, cookieName, sessid)
-	fmt.Printf("%s\n%s\n", sessid, sess.SessID)
+	fmt.Printf("SESS\nsess: %s\ncook: %s\n", sess.SessID, sessid)
+	fmt.Printf("EXPR\nsess: %v\ncook: %v\n", sess.Expires, cookie.Expires)
+
 	if sess.SessID == sessid {
-		result = true
+		result = time.Now().Before(sess.Expires)
 	}
 
 	return result
+}
+
+// Save session data to db.
+func (s *Session) Save() bool {
+	db, err := s.iniC("error(validate-session) loading database\n")
+	if err {
+		return false
+	}
+	defer db.Close()
+	db.Save(s)
+	return db.RowsAffected > 0
 }

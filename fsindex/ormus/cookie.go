@@ -22,3 +22,12 @@ func getCookieValue(cname string, client *http.Request) string {
 	}
 	return cookieValue
 }
+func cookieValue(cookie *http.Cookie) string {
+	cookieValue := ""
+	if cookie != nil {
+		if sessid, x := url.QueryUnescape(cookie.Value); x == nil {
+			cookieValue = sessid
+		}
+	}
+	return cookieValue
+}

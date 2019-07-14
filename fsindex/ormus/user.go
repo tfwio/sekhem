@@ -206,8 +206,10 @@ func (u *User) SessionRefresh(host string, client interface{}) interface{} {
 		return nil
 	}
 	db.LogMode(true)
-	defer db.Close()
+	//
 	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [user_id] = ?", clistr, host, u.ID)
+	//
+	defer db.Close()
 	if sess.UserID == u.ID {
 		sess.Expires = time.Now().Add(durationHrs(2))
 		db.Save(sess)
@@ -216,6 +218,35 @@ func (u *User) SessionRefresh(host string, client interface{}) interface{} {
 	}
 	// fmt.Printf("--> NO user_id match %v, %v\n", sess.UserID, u.ID)
 	return nil
+}
+
+// CookieSession retrieves a cookie provided client-host.
+func CookieSession(host string, client interface{}) (Session, bool) {
+	clistr := getClientString(client)
+	sess := Session{}
+	db, err := iniC("error(validate-session) loading database\n")
+	if err {
+		return sess, false
+	}
+	db.LogMode(true)
+	defer db.Close()
+	db.First(&sess, "[cli-key] = ? AND [host] = ?", clistr, host)
+	return sess, db.RowsAffected != 0
+}
+
+// UserSession gets a session for the user against the client/cookie.
+// NOTE THAT USER ID MUST BE PRESENT!
+func (u *User) UserSession(host string, client interface{}) (Session, bool) {
+	clistr := getClientString(client)
+	sess := Session{}
+	db, err := iniC("error(validate-session) loading database\n")
+	if err {
+		return sess, false
+	}
+	db.LogMode(true)
+	defer db.Close()
+	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [user_id] = ?", clistr, host, u.ID)
+	return sess, db.RowsAffected != 0
 }
 
 // ValidateSessionByUserID checks against a provided salt and hash.
@@ -228,15 +259,12 @@ func (u *User) ValidateSessionByUserID(host string, client interface{}) bool {
 	fmt.Printf("cli-key: %s, host: %s\n", clistr, host)
 
 	result := false
-
-	sess := Session{}
-	db, err := u.iniC("error(validate-session) loading database\n")
+	sess, err := u.UserSession(host, client)
 	if err {
+		fmt.Printf("--> Found no session\n")
 		return false
 	}
-	db.LogMode(true)
-	defer db.Close()
-	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [user_id] = ?", clistr, host, u.ID)
+
 	if sess.UserID == u.ID {
 		result = true
 		fmt.Printf("--> user_id match %v, %v\n", sess.UserID, u.ID)

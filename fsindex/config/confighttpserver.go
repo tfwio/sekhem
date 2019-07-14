@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/tfwio/sekhem/fsindex/ormus"
 
@@ -70,13 +71,16 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 
 		router.Use(func(context *gin.Context) {
 			yn := false
+			ck := false
 			if isunsafe(context.Request.RequestURI) {
 				yn = ormus.SessionValidateCookie(c.SessionHost("sekhem"), context.Request)
+				ck = true
+				fmt.Printf("--> session? %v %s\n", yn, context.Request.RequestURI)
+				fmt.Printf("==> CHECK: %v, VALID: %v\n", ck, yn)
 			}
-			context.Set("valid", yn) // fmt.Printf("--> session? %v %s\n", yn, context.Request.RequestURI)
-			// fmt.Printf("--> LOGGED IN: %v\n", yn)
+			context.Set("valid", yn)
 			context.Next() // after request
-			// fmt.Printf("--> REQUST(POST): %s\n", context.Request.RequestURI)
+			fmt.Printf("--> URI: %s\n", context.Request.RequestURI)
 		})
 
 		router.StaticFile(c.Root.Path, DefaultFile)
@@ -119,10 +123,34 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 	if andServe {
 
 		// we want to create a user and a session
+		router.GET("/logout/", func(g *gin.Context) {
+			sh := c.SessionHost("sekhem")
+
+			if sess, err := ormus.CookieSession(sh, g.Request); !err {
+				fmt.Printf("==> SESSION EXISTS; LOGGIN OUT")
+				g.SetCookie(sh, sess.SessID, 0, "/", "", false, true)
+				sess.Expires = time.Now()
+				sess.Save()
+				g.JSON(
+					http.StatusOK,
+					&LogonModel{
+						Action: "logout",
+						Detail: "Session exists; logged out.",
+						Status: true})
+			} else {
+				fmt.Printf("==> SESSION NOT EXIST; NOTHING TO DO")
+				g.JSON(
+					http.StatusOK,
+					&LogonModel{
+						Action: "logout",
+						Detail: "Session not exist; nothing to do.",
+						Status: false})
+			}
+		})
 
 		router.GET("/login/", func(g *gin.Context) {
+
 			usr := g.Request.FormValue("user")
-			// pas := g.Request.FormValue("pass")
 			j := LogonModel{Action: "login", Detail: "session creation failed.", Status: false}
 			sh := c.SessionHost("sekhem")
 
@@ -134,8 +162,8 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 			} else if u.ValidateSessionByUserID(sh, g.Request) {
 				xs := u.SessionRefresh(sh, g.Request)
 				if xs != nil {
-					ss := xs.(ormus.Session)
-					g.SetCookie(c.SessionHost("sekhem"), ss.SessID, 12*3600, "/", "", false, true)
+					ss := xs.(ormus.Session) // d, _ := time.ParseDuration("12h") // exp := time.Now().Add(d)
+					g.SetCookie(c.SessionHost("sekhem"), ss.SessID, 3600*12, "/", "", false, true)
 				}
 				j.Detail = "Prior session exists; updated."
 				j.Status = true
@@ -192,7 +220,7 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 			xdata := JSONIndex{} // xdata indexes is just a string array map.
 			xdata.Index = []string{}
 			for _, path := range c.Indexes {
-				fmt.Printf("--> requires-login(%v) and logged-in(%v)", path.RequiresLogin, loggedIn)
+				fmt.Printf("--> requires-login(%v) and logged-in(%v)\n", path.RequiresLogin, loggedIn)
 				if path.RequiresLogin && loggedIn {
 					xdata.Index = append(xdata.Index, util.WReap("/", "json", util.AbsBase(path.Source)))
 				} else if !path.RequiresLogin {
