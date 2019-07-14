@@ -10,7 +10,6 @@ import (
 
 // User structure
 type User struct {
-	dbx
 	ID   int64  `gorm:"auto_increment;unique_index;primary_key;column:id"`
 	Name string `gorm:"size:27;column:user"`
 	Salt string `gorm:"size:432;column:salt"`
@@ -102,7 +101,7 @@ func (u *User) CreateSession(r interface{}, hours int, host string, saltSize int
 		sess.Client = util.ToBase64(unknownclient)
 	}
 
-	db, err := u.iniC("error(create-session) loading database\n")
+	db, err := iniC("error(create-session) loading database\n")
 
 	defer db.Close()
 	if !err {
@@ -133,7 +132,7 @@ func (u *User) Create(name string, pass string, saltSize int) int {
 		return 1
 	}
 
-	db, err := u.iniC("error(user-create): loading database\n")
+	db, err := iniC("error(user-create): loading database\n")
 	if err {
 		return -1
 	}
@@ -167,7 +166,7 @@ func (u *User) validate(pass string) bool {
 // and then validate the password.
 func (u *User) ValidatePassword(pass string) bool {
 	// open the database
-	db, err := u.iniC("error(validate-password) loading database\n")
+	db, err := iniC("error(validate-password) loading database\n")
 	if err {
 		return false
 	}
@@ -201,7 +200,7 @@ func (u *User) SessionRefresh(host string, client interface{}) interface{} {
 	// fmt.Printf("cli-key: %s, host: %s\n", clistr, host)
 
 	sess := Session{}
-	db, err := u.iniC("error(validate-session) loading database\n")
+	db, err := iniC("error(validate-session) loading database\n")
 	if err {
 		return nil
 	}

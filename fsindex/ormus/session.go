@@ -6,7 +6,6 @@ import (
 
 // Session represents users who are logged in.
 type Session struct {
-	dbx
 	ID      int64     `gorm:"auto_increment;unique_index;primary_key;column:id"`
 	UserID  int64     `gorm:"column:user_id"` // [users].[id]
 	Host    string    `gorm:"column:host"`    // running multiple server instance/port(s)?
@@ -35,7 +34,7 @@ func EnsureTableSessions() {
 
 // Save session data to db.
 func (s *Session) Save() bool {
-	db, err := s.iniC("error(validate-session) loading database\n")
+	db, err := iniC("error(validate-session) loading database\n")
 	if err {
 		return false
 	}

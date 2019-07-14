@@ -6,11 +6,6 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// this is just an empty struct to be inherited for simple loading
-// of orm/db.
-type dbx struct {
-}
-
 // close on error (no message)
 func dbinit() (*gorm.DB, bool) {
 	db, err := gorm.Open(datasys, datasource)
@@ -30,21 +25,6 @@ func dbinik() (*gorm.DB, bool) {
 		result = true
 	}
 	return db, result
-}
-
-// close on error
-func (dbx) init() (*gorm.DB, bool) {
-	return dbinit()
-}
-
-// close on error
-func (dbx) iniC(format string, msg ...interface{}) (*gorm.DB, bool) {
-	return inik(true, format, msg...)
-}
-
-// keep on error
-func (dbx) iniK(format string, msg ...interface{}) (*gorm.DB, bool) {
-	return inik(false, format, msg...)
 }
 
 // closes the database and prints requested status on error.
