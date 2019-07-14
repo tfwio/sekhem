@@ -15,6 +15,8 @@ import (
 var (
 	_safeHandlers   = wrapup(strings.Split("login,register,logout", ",")...)
 	_unSafeHandlers = wrapup(strings.Split("json,json-index,pan,meta,json,refresh,tag,jtag", ",")...)
+	cookieSecure    = false
+	cookieHTTPOnly  = true
 )
 
 func isunsafe(input string) bool {
@@ -54,7 +56,7 @@ func (c *Configuration) serveLogout(g *gin.Context) {
 	if sess, err := ormus.SessionCookie(sh, g.Request); !err {
 		if time.Now().Before(sess.Expires) {
 			fmt.Printf("==> SESSION EXISTS; LOGGIN OUT")
-			g.SetCookie(sh, sess.SessID, 0, "/", "", false, true)
+			g.SetCookie(sh, sess.SessID, 0, "/", "", cookieSecure, cookieHTTPOnly)
 			sess.Expires = time.Now()
 			sess.Save()
 			g.JSON(
@@ -65,7 +67,7 @@ func (c *Configuration) serveLogout(g *gin.Context) {
 					Status: true})
 		} else {
 			fmt.Printf("==> SESSION EXP: %v\n", sess.Expires)
-			g.SetCookie(sh, sess.SessID, 0, "/", "", false, true)
+			g.SetCookie(sh, sess.SessID, 0, "/", "", cookieSecure, cookieHTTPOnly)
 			sess.Expires = time.Now()
 			sess.Save()
 			g.JSON(
@@ -100,8 +102,10 @@ func (c *Configuration) serveLogin(g *gin.Context) {
 	} else if u.ValidateSessionByUserID(sh, g.Request) {
 		xs := u.SessionRefresh(sh, g.Request)
 		if xs != nil {
+			sh := c.SessionHost("sekhem")
 			ss := xs.(ormus.Session) // d, _ := time.ParseDuration("12h") // exp := time.Now().Add(d)
-			g.SetCookie(c.SessionHost("sekhem"), ss.SessID, 3600*12, "/", "", false, true)
+			g.SetCookie(sh, ss.SessID, 12*3600, "/", "", cookieSecure, cookieHTTPOnly)
+			g.SetCookie(sh+"_xo", u.Name, 12*3600, "/", "", cookieSecure, cookieHTTPOnly)
 		}
 		j.Detail = "Prior session exists; updated."
 		j.Status = true
@@ -109,7 +113,8 @@ func (c *Configuration) serveLogin(g *gin.Context) {
 		hr := 12
 		fmt.Printf("--> Create session for user: %v\n", u.Name)
 		if e, sess := u.CreateSession(g.Request, hr, sh, -1); !e {
-			g.SetCookie(sh, sess.SessID, 12*3600, "/", "", false, true)
+			g.SetCookie(sh, sess.SessID, 12*3600, "/", "", cookieSecure, cookieHTTPOnly)
+			g.SetCookie(sh+"_xo", u.Name, 12*3600, "/", "", cookieSecure, cookieHTTPOnly)
 			j.Detail = "Session created."
 			j.Status = true
 		} else {
@@ -139,7 +144,8 @@ func (c *Configuration) serveRegister(g *gin.Context) {
 		sh := c.SessionHost("sekhem")
 		e, sess := u.CreateSession(g.Request, hr, sh, -1)
 		if !e {
-			g.SetCookie(sh, sess.SessID, 12*3600, "/", "", false, true)
+			g.SetCookie(sh, sess.SessID, 12*3600, "/", "", cookieSecure, cookieHTTPOnly)
+			g.SetCookie(sh+"_xo", sess.SessID, 12*3600, "/", "", cookieSecure, cookieHTTPOnly)
 			j.Status = true
 			j.Detail = "User and Session created."
 		} else {
