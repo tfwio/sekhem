@@ -48,9 +48,9 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 	if andServe {
 
 		router.Use(c.sessMiddleware)
-		router.POST("/logout/", c.serveLogout)
-		router.POST("/login/", c.serveLogin)
-		router.POST("/register/", c.serveRegister)
+		router.Any("/logout/", c.serveLogout)
+		router.Any("/login/", c.serveLogin)
+		router.Any("/register/", c.serveRegister)
 
 		router.StaticFile(c.Root.Path, DefaultFile)
 
@@ -88,7 +88,7 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 			fmt.Printf("  > Target = %-18s, Source = %s\n", tgt.Target, tgt.Source)
 		}
 
-		router.GET("/json-index", func(g *gin.Context) {
+		router.Any("/json-index", func(g *gin.Context) {
 
 			loggedIn1, _ := g.Get("valid")
 			loggedIn := loggedIn1.(bool)
@@ -106,11 +106,11 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 			g.JSON(http.StatusOK, xdata)
 		})
 
-		router.GET("/pan/:path/*action", func(g *gin.Context) {
+		router.Any("/pan/:path/*action", func(g *gin.Context) {
 			c.servePandoc(c.Pandoc.HTMLTemplate, pandoctemplate, g)
 		})
 
-		router.GET("/meta/:path/*action", func(g *gin.Context) {
+		router.Any("/meta/:path/*action", func(g *gin.Context) {
 			c.servePandoc(c.Pandoc.MetaTemplate, pandoctemplate, g)
 		})
 
@@ -123,7 +123,6 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 }
 
 func (c *Configuration) serveModelIndex(router *gin.Engine) {
-
 	println("location indexes #2: primary")
 	for _, path := range c.Indexes {
 		jsonpath := util.WReap("/", "json", util.AbsBase(path.Source))
@@ -135,12 +134,10 @@ func (c *Configuration) serveModelIndex(router *gin.Engine) {
 			router.StaticFS(modelpath, gin.Dir(util.Abs(path.Source), path.Browsable))
 		}
 	}
-	router.GET("/json/:route", c.serveJSON)
-
-	println("/tag/ handler")
-	router.GET("/refresh/:route", c.refreshRouteJSON)
-	router.GET("/tag/:route/*action", func(g *gin.Context) { TagHandler(c, g) })
-	router.GET("/jtag/:route/*action", func(g *gin.Context) { TagHandlerJSON(c, g) })
+	router.Any("/json/:route", c.serveJSON)
+	router.Any("/refresh/:route", c.refreshRouteJSON)
+	router.Any("/tag/:route/*action", func(g *gin.Context) { TagHandler(c, g) })
+	router.Any("/jtag/:route/*action", func(g *gin.Context) { TagHandlerJSON(c, g) })
 }
 
 func (c *Configuration) serveJSON(ctx *gin.Context) {
