@@ -12,11 +12,16 @@ import (
 	"github.com/tfwio/sekhem/fsindex/ormus"
 )
 
+// LogonModel responds to a login action such as "/login/" or (perhaps) "/login-refresh/"
+type LogonModel struct {
+	Action string `json:"action"`
+	Status bool   `json:"status"`
+	Detail string `json:"detail"`
+}
+
 var (
 	_safeHandlers   = wrapup(strings.Split("login,register,logout", ",")...)
 	_unSafeHandlers = wrapup(strings.Split("json,json-index,pan,meta,json,refresh,tag,jtag", ",")...)
-	cookieSecure    = false
-	cookieHTTPOnly  = true
 )
 
 func isunsafe(input string) bool {
@@ -36,18 +41,27 @@ func wrapup(inputs ...string) []string {
 	return data
 }
 
-func (c *Configuration) sessMiddleware(context *gin.Context) {
+func (c *Configuration) sessMiddleware(g *gin.Context) {
 	yn := false
 	ck := false
-	if isunsafe(context.Request.RequestURI) {
-		yn = ormus.SessionCookieValidate(c.SessionHost("sekhem"), context.Request)
+
+	xi := g.ClientIP()
+	ix := strings.Index(xi, ":")
+	fmt.Printf("%d\n", ix)
+	if ix != -1 {
+		fmt.Printf("%s, %d\n", xi[:ix-1], ix)
+	} else {
+		fmt.Printf("%s, %d\n", xi, ix)
+	}
+	if isunsafe(g.Request.RequestURI) {
+		yn = ormus.SessionCookieValidate(c.SessionHost("sekhem"), g)
 		ck = true
-		fmt.Printf("--> session? %v %s\n", yn, context.Request.RequestURI)
+		fmt.Printf("--> session? %v %s\n", yn, g.Request.RequestURI)
 		fmt.Printf("==> CHECK: %v, VALID: %v\n", ck, yn)
 	}
-	context.Set("valid", yn)
-	context.Next() // after request
-	fmt.Printf("--> URI: %s\n", context.Request.RequestURI)
+	g.Set("valid", yn)
+	g.Next() // after request
+	fmt.Printf("--> URI: %s\n", g.Request.RequestURI)
 }
 
 func (c *Configuration) serveLogout(g *gin.Context) {
@@ -56,7 +70,7 @@ func (c *Configuration) serveLogout(g *gin.Context) {
 	if sess, err := ormus.SessionCookie(sh, g.Request); !err {
 		if time.Now().Before(sess.Expires) {
 			fmt.Printf("==> SESSION EXISTS; LOGGIN OUT")
-			g.SetCookie(sh, sess.SessID, 0, "/", "", cookieSecure, cookieHTTPOnly)
+			ormus.SetCookieMaxAge(g, sh, sess.SessID, 0)
 			sess.Expires = time.Now()
 			sess.Save()
 			g.JSON(
@@ -67,7 +81,7 @@ func (c *Configuration) serveLogout(g *gin.Context) {
 					Status: true})
 		} else {
 			fmt.Printf("==> SESSION EXP: %v\n", sess.Expires)
-			g.SetCookie(sh, sess.SessID, 0, "/", "", cookieSecure, cookieHTTPOnly)
+			ormus.SetCookieMaxAge(g, sh, sess.SessID, 0)
 			sess.Expires = time.Now()
 			sess.Save()
 			g.JSON(
@@ -99,22 +113,23 @@ func (c *Configuration) serveLogin(g *gin.Context) {
 		println("--> NO user found!")
 		j.Detail = "No user record."
 		j.Status = false
-	} else if u.ValidateSessionByUserID(sh, g.Request) {
-		xs := u.SessionRefresh(sh, g.Request)
+	} else if u.ValidateSessionByUserID(sh, g) {
+		// we have a valid session (expired or not)
+		xs := u.SessionRefresh(sh, g)
 		if xs != nil {
 			sh := c.SessionHost("sekhem")
 			ss := xs.(ormus.Session) // d, _ := time.ParseDuration("12h") // exp := time.Now().Add(d)
-			g.SetCookie(sh, ss.SessID, 12*3600, "/", "", cookieSecure, cookieHTTPOnly)
-			g.SetCookie(sh+"_xo", u.Name, 12*3600, "/", "", cookieSecure, cookieHTTPOnly)
+			ormus.SetCookieMaxAge(g, sh, ss.SessID, ormus.ConstCookieAge12H)
+			ormus.SetCookieSessOnly(g, sh+"_xo", u.Name)
 		}
 		j.Detail = "Prior session exists; updated."
 		j.Status = true
 	} else {
 		hr := 12
 		fmt.Printf("--> Create session for user: %v\n", u.Name)
-		if e, sess := u.CreateSession(g.Request, hr, sh, -1); !e {
-			g.SetCookie(sh, sess.SessID, 12*3600, "/", "", cookieSecure, cookieHTTPOnly)
-			g.SetCookie(sh+"_xo", u.Name, 12*3600, "/", "", cookieSecure, cookieHTTPOnly)
+		if e, sess := u.CreateSession(g, hr, sh, -1); !e {
+			ormus.SetCookieMaxAge(g, sh, sess.SessID, ormus.ConstCookieAge12H)
+			ormus.SetCookieSessOnly(g, sh+"_xo", u.Name)
 			j.Detail = "Session created."
 			j.Status = true
 		} else {
@@ -140,12 +155,12 @@ func (c *Configuration) serveRegister(g *gin.Context) {
 			j.Detail = "User record already exists."
 		}
 	} else {
-		hr := 12
 		sh := c.SessionHost("sekhem")
-		e, sess := u.CreateSession(g.Request, hr, sh, -1)
+		// create a session for the user
+		e, sess := u.CreateSession(g, 12, sh, -1)
 		if !e {
-			g.SetCookie(sh, sess.SessID, 12*3600, "/", "", cookieSecure, cookieHTTPOnly)
-			g.SetCookie(sh+"_xo", sess.SessID, 12*3600, "/", "", cookieSecure, cookieHTTPOnly)
+			ormus.SetCookieMaxAge(g, sh, sess.SessID, ormus.ConstCookieAge12H)
+			ormus.SetCookieSessOnly(g, sh+"_xo", u.Name)
 			j.Status = true
 			j.Detail = "User and Session created."
 		} else {

@@ -2,9 +2,9 @@ package ormus
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tfwio/sekhem/util"
 )
 
@@ -68,7 +68,7 @@ func (u *User) ByID(id int64) bool {
 }
 
 // CreateSession32 creates sessioni with a default salt size.
-func (u *User) CreateSession32(r interface{}, hours int, host string) (bool, Session) {
+func (u *User) CreateSession32(r *gin.Context, hours int, host string) (bool, Session) {
 	return u.CreateSession(r, hours, host, 32)
 }
 
@@ -76,7 +76,7 @@ func (u *User) CreateSession32(r interface{}, hours int, host string) (bool, Ses
 //
 // FIXME: we should be checking if there is a existing record in sessions table
 // and re-using it for the user executing UPDATE as opposed to CREATE.
-func (u *User) CreateSession(r interface{}, hours int, host string, saltSize int) (bool, Session) {
+func (u *User) CreateSession(r *gin.Context, hours int, host string, saltSize int) (bool, Session) {
 
 	t := time.Now()
 	ss := saltsize
@@ -92,14 +92,7 @@ func (u *User) CreateSession(r interface{}, hours int, host string, saltSize int
 		Expires: t.Add(durationHrs(hours)),
 	}
 
-	switch d := r.(type) {
-	case *http.Request:
-		sess.Client = util.ToBase64(d.RemoteAddr)
-	case string:
-		sess.Client = util.ToBase64(d)
-	default:
-		sess.Client = util.ToBase64(unknownclient)
-	}
+	sess.Client = getClientString(r)
 
 	db, err := iniC("error(create-session) loading database\n")
 
@@ -193,7 +186,7 @@ func (u *User) ValidatePassword(pass string) bool {
 
 // SessionRefresh Extend existing session.
 // if succeeds, result is the created session, otherwise nil.
-func (u *User) SessionRefresh(host string, client interface{}) interface{} {
+func (u *User) SessionRefresh(host string, client *gin.Context) interface{} {
 	// println("--> SessionRefresh")
 	// c := client.(*http.Request)
 	clistr := getClientString(client)
@@ -221,7 +214,7 @@ func (u *User) SessionRefresh(host string, client interface{}) interface{} {
 
 // UserSession checks a session for the user against the client/cookie.
 // NOTE THAT USER ID MUST BE PRESENT!
-func (u *User) UserSession(host string, client interface{}) (Session, bool) {
+func (u *User) UserSession(host string, client *gin.Context) (Session, bool) {
 	clistr := getClientString(client)
 	sess := Session{}
 	db, err := iniC("error(validate-session) loading database\n")
@@ -236,7 +229,7 @@ func (u *User) UserSession(host string, client interface{}) (Session, bool) {
 
 // ValidateSessionByUserID checks against a provided salt and hash.
 // BUT FIRST, it checks for a valid session?
-func (u *User) ValidateSessionByUserID(host string, client interface{}) bool {
+func (u *User) ValidateSessionByUserID(host string, client *gin.Context) bool {
 
 	println("--> ValidateSessionByUserID")
 

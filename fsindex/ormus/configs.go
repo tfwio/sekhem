@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tfwio/sekhem/util"
 )
 
@@ -41,6 +42,9 @@ func getClientString(client interface{}) string {
 	clistr := ""
 	// cess := ""
 	switch c := client.(type) {
+	case *gin.Context:
+		clistr = util.ToUBase64(c.ClientIP())
+		break
 	case *http.Request:
 		clistr = util.ToUBase64(c.RemoteAddr)
 		break
