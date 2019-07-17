@@ -134,7 +134,7 @@ func (u *User) Create(name string, pass string, saltSize int) int {
 	u.Name = name
 	u.Salt = util.BytesToBase64(bsalt)
 	u.Hash = util.BytesToBase64(util.GetPasswordHash(pass, bsalt))
-	fmt.Printf("--> %s, %s, %v\n", u.Name, pass, u.Salt)
+	// fmt.Printf("--> %s, %s, %v\n", u.Name, pass, u.Salt)
 
 	defer db.Close()
 	db.Create(u)
@@ -158,6 +158,7 @@ func (u *User) validate(pass string) bool {
 // we use the user's [name] to find the table-record
 // and then validate the password.
 func (u *User) ValidatePassword(pass string) bool {
+	fmt.Println("==> ValidatePassword")
 	// open the database
 	db, err := iniC("error(validate-password) loading database\n")
 	if err {
@@ -166,6 +167,7 @@ func (u *User) ValidatePassword(pass string) bool {
 
 	result := false
 	tempUser := User{Name: "really?"}
+	db.LogMode(dataLogging)
 	db.FirstOrInit(&tempUser, User{Name: u.Name})
 
 	if db.RowsAffected == 0 && tempUser.Name != u.Name {
@@ -184,81 +186,55 @@ func (u *User) ValidatePassword(pass string) bool {
 	return result
 }
 
-// SessionRefresh Extend existing session.
-// if succeeds, result is the created session, otherwise nil.
-func (u *User) SessionRefresh(host string, client *gin.Context) interface{} {
-	// println("--> SessionRefresh")
-	// c := client.(*http.Request)
-	clistr := getClientString(client)
-	// fmt.Printf("cli-key: %s, host: %s\n", clistr, host)
-
-	sess := Session{}
-	db, err := iniC("error(validate-session) loading database\n")
-	if err {
-		return nil
-	}
-	db.LogMode(true)
-	//
-	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [user_id] = ?", clistr, host, u.ID)
-	//
-	defer db.Close()
-	if sess.UserID == u.ID {
-		sess.Expires = time.Now().Add(durationHrs(2))
-		db.Save(sess)
-		// fmt.Printf("--> UPDATED SESS! user_id match %v, %v\n", sess.UserID, u.ID)
-		return sess
-	}
-	// fmt.Printf("--> NO user_id match %v, %v\n", sess.UserID, u.ID)
-	return nil
-}
-
-// UserSession checks a session for the user against the client/cookie.
-// NOTE THAT USER ID MUST BE PRESENT!
+// UserSession grabs a session from sessions table matching `user_id`, `host`
+// and `cli-key` (is the app-id used to store SessID info).
+//
+// Nothing is validated, we just grab the `sessions.session` so that it
+// can be reused and/or updated.
+//
+// returns (`Session`, `success` bool)
 func (u *User) UserSession(host string, client *gin.Context) (Session, bool) {
+	// fmt.Println("==> UserSession()")
 	clistr := getClientString(client)
 	sess := Session{}
 	db, err := iniC("error(validate-session) loading database\n")
 	if err {
 		return sess, false
 	}
-	db.LogMode(true)
+	db.LogMode(dataLogging)
 	defer db.Close()
 	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [user_id] = ?", clistr, host, u.ID)
-	return sess, db.RowsAffected != 0
+	// fmt.Printf("  --> MATCH: %v\n", sess.UserID == u.ID)
+	return sess, sess.UserID == u.ID
 }
 
-// ValidateSessionByUserID checks against a provided salt and hash.
-// BUT FIRST, it checks for a valid session?
+// ValidateSessionByUserID checks to see if a session exists in the database
+// provided the `User.ID` of the current `User` record.
+//
+// It also checks if the session is expired.
+//
+// - returns `true` if the Session is valid and has not expired.
+//
+// - returns `false` if `User.ID` is NOT set or the Session has expired.
 func (u *User) ValidateSessionByUserID(host string, client *gin.Context) bool {
-
-	println("--> ValidateSessionByUserID")
-
-	clistr := getClientString(client)
-	fmt.Printf("cli-key: %s, host: %s\n", clistr, host)
-
-	result := false
-	sess, err := u.UserSession(host, client)
-	if err {
-		fmt.Printf("--> Found no session\n")
+	println("==> ValidateSessionByUserID")
+	if u.ID == 0 {
+		println("  --> User ID == 0; aborting.")
 		return false
 	}
 
-	if sess.UserID == u.ID {
-		result = true
-		fmt.Printf("--> user_id match %v, %v\n", sess.UserID, u.ID)
-	} else {
-		fmt.Printf("--> NO user_id match %v, %v\n", sess.UserID, u.ID)
+	sess, success := u.UserSession(host, client)
+	if !success {
+		return false
 	}
 
-	t := time.Now()
-	if !t.Before(sess.Expires) {
-		fmt.Println("--> session isn't expired")
-		result = false
-	} else {
-		fmt.Println("--> session is expired")
+	if time.Now().Before(sess.Expires) {
+		fmt.Println("  --> SESSION NOT EXPIRED")
+		return true
 	}
+	fmt.Println("  --> SESSION EXPIRED")
 
-	return result
+	return false
 }
 
 // EnsureTableUsers creates table [users] if not exist.

@@ -43,35 +43,30 @@ func wrapup(inputs ...string) []string {
 
 func (c *Configuration) sessMiddleware(g *gin.Context) {
 	yn := false
-	ck := false
+	// ck := false
 
-	xi := g.ClientIP()
-	ix := strings.Index(xi, ":")
-	fmt.Printf("%d\n", ix)
-	if ix != -1 {
-		fmt.Printf("%s, %d\n", xi[:ix-1], ix)
-	} else {
-		fmt.Printf("%s, %d\n", xi, ix)
-	}
 	if isunsafe(g.Request.RequestURI) {
 		yn = ormus.SessionCookieValidate(c.SessionHost("sekhem"), g)
-		ck = true
-		fmt.Printf("--> session? %v %s\n", yn, g.Request.RequestURI)
-		fmt.Printf("==> CHECK: %v, VALID: %v\n", ck, yn)
+		// ck = true
+		// fmt.Printf("--> session? %v %s\n", yn, g.Request.RequestURI)
+		// fmt.Printf("==> CHECK: %v, VALID: %v\n", ck, yn)
 	}
 	g.Set("valid", yn)
 	g.Next() // after request
-	fmt.Printf("--> URI: %s\n", g.Request.RequestURI)
+	// fmt.Printf("--> URI: %s\n", g.Request.RequestURI)
 }
 
 func (c *Configuration) serveLogout(g *gin.Context) {
 	sh := c.SessionHost("sekhem")
-
-	if sess, err := ormus.SessionCookie(sh, g.Request); !err {
+	fmt.Println("==> LOGOUT ATTEMPT")
+	sess, success := ormus.SessionCookie(sh, g)
+	if success {
+		fmt.Printf("  ==> CLIENT COOKIE EXISTS; USER=%d\n", sess.UserID)
+		ormus.SetCookieMaxAge(g, sh, sess.SessID, 0)
+		sess.Expires = time.Now()
 		if time.Now().Before(sess.Expires) {
-			fmt.Printf("==> SESSION EXISTS; LOGGIN OUT")
-			ormus.SetCookieMaxAge(g, sh, sess.SessID, 0)
-			sess.Expires = time.Now()
+			// Found matching session from browser-cookie
+			fmt.Printf("  --> NOT EXPIRED; USER=%d\n", sess.UserID)
 			sess.Save()
 			g.JSON(
 				http.StatusOK,
@@ -80,17 +75,16 @@ func (c *Configuration) serveLogout(g *gin.Context) {
 					Detail: "Session exists; logged out.",
 					Status: true})
 		} else {
-			fmt.Printf("==> SESSION EXP: %v\n", sess.Expires)
-			ormus.SetCookieMaxAge(g, sh, sess.SessID, 0)
-			sess.Expires = time.Now()
+			fmt.Printf("  --> SESSION EXP: %v\n", sess.Expires)
 			sess.Save()
 			g.JSON(
 				http.StatusOK,
 				&LogonModel{
 					Action: "logout",
-					Detail: fmt.Sprintf("Session expired; cookie stamped as expred now (%v).", sess.Expires),
+					Detail: fmt.Sprintf("User was logged out prior; Logout re-enforced."),
 					Status: false})
 		}
+
 	} else {
 		fmt.Printf("==> SESSION NOT EXIST; NOTHING TO DO")
 		g.JSON(
@@ -104,36 +98,46 @@ func (c *Configuration) serveLogout(g *gin.Context) {
 
 func (c *Configuration) serveLogin(g *gin.Context) {
 
+	fmt.Println("==> LOGIN REQUEST")
+
 	usr := g.Request.FormValue("user")
 	j := LogonModel{Action: "login", Detail: "session creation failed.", Status: false}
 	sh := c.SessionHost("sekhem")
 
 	u := ormus.User{}
 	if !u.ByName(usr) {
-		println("--> NO user found!")
+		println("  --> USER NOT FOUND!")
 		j.Detail = "No user record."
 		j.Status = false
-	} else if u.ValidateSessionByUserID(sh, g) {
-		// we have a valid session (expired or not)
-		xs := u.SessionRefresh(sh, g)
-		if xs != nil {
-			sh := c.SessionHost("sekhem")
-			ss := xs.(ormus.Session) // d, _ := time.ParseDuration("12h") // exp := time.Now().Add(d)
-			ormus.SetCookieMaxAge(g, sh, ss.SessID, ormus.ConstCookieAge12H)
-			ormus.SetCookieSessOnly(g, sh+"_xo", u.Name)
-		}
-		j.Detail = "Prior session exists; updated."
-		j.Status = true
 	} else {
-		hr := 12
-		fmt.Printf("--> Create session for user: %v\n", u.Name)
-		if e, sess := u.CreateSession(g, hr, sh, -1); !e {
-			ormus.SetCookieMaxAge(g, sh, sess.SessID, ormus.ConstCookieAge12H)
-			ormus.SetCookieSessOnly(g, sh+"_xo", u.Name)
-			j.Detail = "Session created."
-			j.Status = true
+		// We have a valid user;
+		sess, success := u.UserSession(sh, g)
+		if success {
+			fmt.Println("  ==> FOUND USER, VALIDATING PW")
+			if fpass := g.Request.FormValue("pass"); fpass != "" {
+				if u.ValidatePassword(fpass) {
+					fmt.Println("  ==> PW:GOOD")
+					sess.Refresh(true)
+					ormus.SetCookieMaxAge(g, sh, sess.SessID, ormus.ConstCookieAge12H)
+					ormus.SetCookieSessOnly(g, sh+"_xo", u.Name)
+					j.Detail = "Logged in."
+					j.Status = true
+				} else {
+					fmt.Println("  ==> PW:FAIL")
+					j.Detail = "Password did not match."
+					j.Status = true
+				}
+			}
 		} else {
-			j.Detail = "Session creation failed"
+			// There is no session for the user.
+			// this use case shouldn't exist since a session is created when a user is created!
+			// this should report success to spite the fact that its a failure.
+			fmt.Println("  ==> DESTROY SESSION")
+			sess.Destroy(true)
+			ormus.SetCookieMaxAge(g, sh, sess.SessID, -1)
+			ormus.SetCookieMaxAge(g, sh+"_xo", "", -1)
+			j.Detail = "Session destroyed."
+			j.Status = true
 		}
 	}
 	g.JSON(http.StatusOK, j)

@@ -15,7 +15,13 @@ var (
 	saltsize                = 48
 	defaultSessionLength, _ = time.ParseDuration("2h")
 	unknownclient           = "unknown-client"
+	dataLogging             = false
 )
+
+// SetDataLogging allows you to turn on or off GORM data logging.
+func SetDataLogging(value bool) {
+	dataLogging = value
+}
 
 // SetDefaults allows a external library to set the local datasource.
 // Set saltSize to -1 to persist default.

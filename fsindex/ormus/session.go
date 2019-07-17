@@ -2,6 +2,8 @@ package ormus
 
 import (
 	"time"
+
+	"github.com/tfwio/sekhem/util"
 )
 
 // Session represents users who are logged in.
@@ -18,6 +20,34 @@ type Session struct {
 // TableName Set User's table name to be `users`
 func (Session) TableName() string {
 	return "sessions"
+}
+
+// IsExpired returns if the session is expired.
+// If `Session.ID` == 0, then it just returns `false`.
+func (s *Session) IsExpired() bool {
+	if s.ID == 0 {
+		return false
+	}
+	return time.Now().Before(s.Expires)
+}
+
+// Refresh will update the `Session.Expires` date AND
+// the `SessID` with new values.
+func (s *Session) Refresh(andSave bool) {
+	s.Expires = time.Now().Add(durationHrs(cookieAgeHrs))
+	s.SessID = util.ToUBase64(util.NewSaltString(saltsize))
+	if andSave {
+		s.Save()
+	}
+}
+
+// Destroy will update the `Session.Expires` date AND
+// the `SessID` with new, EXPIRED  values.
+func (s *Session) Destroy(andSave bool) {
+	s.Expires = time.Now()
+	if andSave {
+		s.Save()
+	}
 }
 
 // EnsureTableSessions creates table [sessions] if not exist.

@@ -96,7 +96,7 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 			xdata := JSONIndex{} // xdata indexes is just a string array map.
 			xdata.Index = []string{}
 			for _, path := range c.Indexes {
-				fmt.Printf("--> requires-login(%v) and logged-in(%v)\n", path.RequiresLogin, loggedIn)
+				// fmt.Printf("--> requires-login(%v) and logged-in(%v)\n", path.RequiresLogin, loggedIn)
 				if path.RequiresLogin && loggedIn {
 					xdata.Index = append(xdata.Index, util.WReap("/", "json", util.AbsBase(path.Source)))
 				} else if !path.RequiresLogin {

@@ -1,7 +1,6 @@
 package ormus
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -13,6 +12,7 @@ var (
 	cookieSecure   = false
 	cookieHTTPOnly = true
 	cookieAgeSec   = ConstCookieAge48H
+	cookieAgeHrs   = 12
 )
 
 //
@@ -83,6 +83,7 @@ func CookieDefaults(ageSec int, httpOnly bool, isSecure bool) {
 	cookieSecure = isSecure
 }
 
+// getCookie does what it says.  if there is an error the returned value is `nil`.
 func getCookie(cname string, client *gin.Context) *http.Cookie {
 	var result *http.Cookie
 	if xid, e := client.Request.Cookie(cname); e == nil {
@@ -91,6 +92,7 @@ func getCookie(cname string, client *gin.Context) *http.Cookie {
 	return result
 }
 
+// getCookieValue returns a string value if present, or an empty string.
 func getCookieValue(cname string, client *gin.Context) string {
 	cookie := getCookie(cname, client)
 	cookieValue := ""
@@ -102,6 +104,8 @@ func getCookieValue(cname string, client *gin.Context) string {
 	return cookieValue
 }
 
+// cookieValue takes in a `*http.Cookie` and attempts to return
+// a string value.  If no value (error), then we'll return an empty string.
 func cookieValue(cookie *http.Cookie) string {
 	cookieValue := ""
 	if cookie != nil {
@@ -114,6 +118,10 @@ func cookieValue(cookie *http.Cookie) string {
 
 // SessionCookieValidate checks against a provided salt and hash.
 // BUT FIRST, it checks for a valid session?
+//
+// - check if we have a session cookie
+//
+// - if so then...
 func SessionCookieValidate(cookieName string, client *gin.Context) bool {
 
 	clistr := getClientString(client)
@@ -130,30 +138,50 @@ func SessionCookieValidate(cookieName string, client *gin.Context) bool {
 	if err {
 		return false
 	}
-	db.LogMode(true)
+	db.LogMode(dataLogging)
 	sess := Session{}
 	defer db.Close()
 	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [sessid] = ?", clistr, cookieName, sessid)
-	fmt.Printf("SESS\nsess: %s\ncook: %s\n", sess.SessID, sessid)
-	fmt.Printf("EXPR\nsess: %v\ncook: %v\n", sess.Expires, cookie.Expires)
+	// fmt.Printf("SESS\nsess: %s\ncook: %s\n", sess.SessID, sessid)
+	// fmt.Printf("EXPR\nsess: %v\ncook: %v\n", sess.Expires, cookie.Expires)
 
 	if sess.SessID == sessid {
 		result = time.Now().Before(sess.Expires)
+		// fmt.Printf("==> SESSION IS VALID\n")
 	}
 
 	return result
 }
 
-// SessionCookie retrieves a cookie provided client-host.
-func SessionCookie(host string, client interface{}) (Session, bool) {
+// SessionCookie looks in `sessions` table for a matching `sess_id`
+// and returns the matching `Session` if found or an empty session.
+// (bool) Success value tells us if a match was found.
+//
+// THIS DOES NOT VALIDATE THE SESSION! IT JUST LOOKS
+// FOR A SESSION ON THE GIVEN HOST!
+//
+// If a matching session results, may be used to determine or lookup
+// the owning User.
+//
+// - Returns `false` on error (with an empty session).
+//
+// - Returns `true` on success with a Session out of our database.
+func SessionCookie(host string, client *gin.Context) (Session, bool) {
+	// println("==> SessionCookie")
 	clistr := getClientString(client)
+	cookiesess := getCookieValue(host, client)
+
 	sess := Session{}
+	if cookiesess == "" {
+		return sess, false
+	}
 	db, err := iniC("error(validate-session) loading database\n")
 	if err {
 		return sess, false
 	}
-	db.LogMode(true)
+	db.LogMode(dataLogging)
 	defer db.Close()
-	db.First(&sess, "[cli-key] = ? AND [host] = ?", clistr, host)
-	return sess, db.RowsAffected != 0
+	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [sessid] = ?", clistr, host, cookiesess)
+	// fmt.Printf("  --> SESSID MATCH: %v\n", sess.SessID == cookiesess)
+	return sess, sess.SessID == cookiesess
 }
