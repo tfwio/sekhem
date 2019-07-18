@@ -51,6 +51,7 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 		router.Any("/logout/", c.serveLogout)
 		router.Any("/login/", c.serveLogin)
 		router.Any("/register/", c.serveRegister)
+		router.Any("/stat/", c.serveUserStatus)
 
 		router.StaticFile(c.Root.Path, DefaultFile)
 

@@ -17,6 +17,7 @@ type LogonModel struct {
 	Action string `json:"action"`
 	Status bool   `json:"status"`
 	Detail string `json:"detail"`
+	Data   string `json:"data,omitempty"`
 }
 
 var (
@@ -54,6 +55,43 @@ func (c *Configuration) sessMiddleware(g *gin.Context) {
 	g.Set("valid", yn)
 	g.Next() // after request
 	// fmt.Printf("--> URI: %s\n", g.Request.RequestURI)
+}
+
+// serveUserStatus serves JSON checking if a session exists,
+// persists, and a user exists.
+// `{status: true,  detail: "found", data: <username>}` if all checks out,
+// `{status: false, detail: "exists"}` if not logged in and
+// `{status: false, detail: "none"}` if no user was found.
+func (c *Configuration) serveUserStatus(g *gin.Context) {
+	sh := c.SessionHost("sekhem")
+	fmt.Println("==> CHECKING USER STATUS")
+	if sess, success := ormus.SessionCookie(sh, g); success {
+		fmt.Printf("  ==> CLIENT COOKIE EXISTS; USER=%d\n", sess.UserID)
+		if u, success := sess.GetUser(); success && sess.IsValid() {
+			g.JSON(
+				http.StatusOK,
+				&LogonModel{
+					Action: "user-info",
+					Detail: "found",
+					Status: true,
+					Data:   u.Name,
+				})
+		} else {
+			g.JSON(
+				http.StatusOK,
+				&LogonModel{
+					Action: "user-info",
+					Detail: "exists",
+					Status: false})
+		}
+	} else {
+		g.JSON(
+			http.StatusOK,
+			&LogonModel{
+				Action: "user-info",
+				Detail: "none",
+				Status: false})
+	}
 }
 
 func (c *Configuration) serveLogout(g *gin.Context) {

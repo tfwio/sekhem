@@ -22,9 +22,9 @@ func (Session) TableName() string {
 	return "sessions"
 }
 
-// IsExpired returns if the session is expired.
+// IsValid returns if the session is expired.
 // If `Session.ID` == 0, then it just returns `false`.
-func (s *Session) IsExpired() bool {
+func (s *Session) IsValid() bool {
 	if s.ID == 0 {
 		return false
 	}
@@ -39,6 +39,15 @@ func (s *Session) Refresh(andSave bool) {
 	if andSave {
 		s.Save()
 	}
+}
+
+// GetUser gets a user by the UserID stored in the Session.
+func (s *Session) GetUser() (User, bool) {
+	u := User{}
+	if u.ByID(s.UserID) {
+		return u, true
+	}
+	return u, false
 }
 
 // Destroy will update the `Session.Expires` date AND
