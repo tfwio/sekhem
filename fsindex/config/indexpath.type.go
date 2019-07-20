@@ -9,7 +9,7 @@ type IndexPath struct {
 	Browsable     bool     `json:"nav,omitempty"` // show directory file-listing in browser
 	Servable      bool     `json:"serve"`
 	RequiresLogin bool     `json:"logon,omitempty"`
-	IgnorePaths   []string `json:"ignorePaths"` // absolute paths to ignore
-	Extensions    []string `json:"spec"`        // file extensions to recognize; I.E.: the `Configuration.Extensions` .Name.
+	IgnorePaths   []string `json:"ignore,omitempty"` // absolute paths to ignore
+	Extensions    []string `json:"spec"`             // file extensions to recognize; I.E.: the `Configuration.Extensions` .Name.
 	path          string   // path as used in memory; we'll probably just ignore this guy.
 }

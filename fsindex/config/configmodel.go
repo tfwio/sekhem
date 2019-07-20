@@ -141,7 +141,7 @@ func (c *Configuration) createEntry(path IndexPath, settings fsindex.Settings) f
 			FileFilter: c.Extensions,
 		},
 		Settings:    settings,
-		IgnorePaths: []string{},
+		IgnorePaths: path.IgnorePaths,
 	}
 	buildFileSystemModel(&pe)
 	return pe

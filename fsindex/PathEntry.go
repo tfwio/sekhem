@@ -39,10 +39,16 @@ func (p *PathEntry) Top() *PathEntry {
 	return mRef
 }
 
-// IsIgnore ...
+// IsIgnore is a case sensitive string matcher checking
+// each path added to our index with a unix slash `/`
+// path separator.
+// We'll check against abspath, path name
 func (p *PathEntry) IsIgnore(r *Model) bool {
-	for _, mNode := range r.IgnorePaths {
-		if mNode == p.Abs() {
+	ref := util.UnixSlash(p.FullPath)
+	bas := p.Base()
+	for _, mNode := range r.IgnorePaths { // || ign == util.UnixSlash(p.Abs())
+		ign := util.UnixSlash(mNode)
+		if ign == bas || ign == ref {
 			return true
 		}
 	}
