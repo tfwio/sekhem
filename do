@@ -4,16 +4,16 @@
 # sub-commands: mod linux clean, l-install, 386 amd64, verbose tidy, tosrv tofo
 # cp2 uses jsoniter (login | crypt : compile ./login.exe)
 
-# set a copyto directory.
+# set a copyto directory. (this would be my react sandbox)
 export copyto=/c/Users/tfwro/Desktop/DesktopMess/.git-react/react-box
 # default[mod:GO111MODULE=on]
 export GOARCH=amd64
 # 
 # This script does a few things, all of which require some form of input.
 if [ "${#}" == "0" ]; then
-  echo no args so we\'ll do a standard build
+  echo no args so we\'ll do nothing
   echo sub-commands\: mod linux clean, l-install, 386 amd64, verbose tidy, tosrv tofo
-  echo cp, cp2 \(uses jsoniter\)
+  echo cp2 \(uses \'jsoniter\' and \'session\' build tags\)
   exit 0
   # standard_stuff clean build mod
 fi
@@ -32,8 +32,8 @@ do_init(){
         ;;
       crypt | login)
         export GO111MODULE=on
-        echo go build -o login.exe data/crypt.cli.go
-        go build -o login.exe data/crypt.cli.go
+        echo go build -tags=session -o login.exe data/crypt.cli.go
+        go build -tags=session -o login.exe data/crypt.cli.go
         ;;
       mod)
         export GO111MODULE=on
@@ -89,8 +89,8 @@ do_build(){
     case "${i}" in
       build)
         echo building
-        echo go build -tags=jsoniter -o srv-${GOARCH}.exe ${buildmod} *.go
-        go build -tags=jsoniter -o srv-${GOARCH}.exe ${buildmod} *.go
+        echo go build -tags \'jsoniter session\' -o srv-${GOARCH}.exe ${buildmod} *.go
+        go build -tags 'jsoniter session' -o srv-${GOARCH}.exe ${buildmod} *.go
         ;;
     esac
   done
@@ -140,13 +140,9 @@ do_copy(){
         echo go build -o m2.exe util/m2.go
         go build -o m2.exe util/m2.go
         ;;
-      cp)
-        echo GO111MODULE=on go build -o srv.exe -mod vendor srv.go \&\& cp -f  srv.exe ${copyto}
-        GO111MODULE=on go build -o srv.exe -mod vendor srv.go && cp -f  srv.exe ${copyto}
-        ;;
       cp2)
-        echo GO111MODULE=on go build -tags=jsoniter -o srv.exe -mod vendor srv.go \&\& cp -f  srv.exe ${copyto}
-        GO111MODULE=on go build -tags=jsoniter -o srv.exe -mod vendor srv.go && cp -f  srv.exe ${copyto}
+        echo GO111MODULE=on go build -tags \'jsoniter session\' -o srv.exe -mod vendor srv.go \&\& cp -f  srv.exe ${copyto}
+        GO111MODULE=on go build -tags='jsoniter session' -o srv.exe -mod vendor srv.go && cp -f  srv.exe ${copyto}
         ;;
       tofo)
         echo copying to

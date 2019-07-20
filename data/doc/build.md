@@ -58,14 +58,14 @@ build targeting your native OS.
 ```
 [optional] or manually typing everything out...
 ```bash
-GO111MODULE=on GOOS=windows GOARCH=amd64 go build -tags=jsoniter -o srv.exe -mod vendor srv.go
+GO111MODULE=on GOOS=windows GOARCH=amd64 go build -tags 'jsoniter session' -o srv.exe -mod vendor srv.go
 ```
 
 Just be sure that the vendor libs are downloaded.  If the build process
 complains that you're missing dependencies, you'll have to `go get` any such lib.  
 For example, to use gogonic/gin's `-tags=jsoniter` tag we'll provide the
 [json-iterator][github.com/json-iterator/go] dependency.  
-`go get github.com/json-iterator/go`  
+`go get github.com/json-iterator/go`
 
 Golang Development Libs Used
 -----------------
