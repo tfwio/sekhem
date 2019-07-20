@@ -40,9 +40,9 @@ KNOWN BUGS for expected fixes
 - #1 **I'd like to see file time-stamps (CRD)**  
   This may only be implemented in windows since thats the main dev
   workstation.  PRs and discussions (bug section) are welcome.
-- #2 [bug] *if file-extensions are poorly configured ATM:*  
+- ~~#2 [bug] *if file-extensions are poorly configured ATM:*  
   Multiple/duplicate files are returned in XHR/JSON due to extension definitions sharing the same extension.  
-  (will be fixed soon)
+  (will be fixed soon)~~
 - #3 [feature] **remove long-empty path entries**  
   The idea is to add a post indexing filter that strips out all empty directories and to provide a JSON option to apply such a filter.
 

@@ -1,9 +1,9 @@
+// +build ignore
+
 package main
 
 // tickers would help mitigate sessions
 // https://gobyexample.com/tickers
-
-// +build ignore
 
 import (
 	"flag"
@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/tfwio/sekhem/fsindex/ormus"
+	"github.com/tfwio/sekhem/fsindex/session"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"

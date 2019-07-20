@@ -1,4 +1,6 @@
-package ormus
+// +build session
+
+package session
 
 import "fmt"
 

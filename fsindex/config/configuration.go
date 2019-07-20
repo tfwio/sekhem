@@ -122,9 +122,8 @@ func (c *Configuration) InitializeDefaults(path string, targetPath string) {
 	}
 	c.Locations = []StaticPath{
 		StaticPath{
-			Source:    constImagesSourceDefault,
-			Target:    constImagesTargetDefault,
-			Browsable: true,
+			Source: constImagesSourceDefault,
+			Target: constImagesTargetDefault,
 		},
 		StaticPath{
 			Source:    constStaticSourceDefault,

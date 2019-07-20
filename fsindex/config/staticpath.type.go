@@ -6,5 +6,5 @@ type StaticPath struct {
 	Source string `json:"src"`
 	Target string `json:"tgt"`
 	// show directory file-listing in browser
-	Browsable bool `json:"nav"`
+	Browsable bool `json:"nav,omitempty"`
 }

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/tfwio/sekhem/fsindex/ormus"
+	"github.com/tfwio/sekhem/fsindex/session"
 
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/mattn/go-sqlite3"
@@ -105,7 +105,7 @@ func initializeJSONConf() {
 	configuration.InitializeDefaults(defaultConfPath, defaultConfTarget)
 	configuration.FromJSON(config.DefaultConfigFile) // loads (or creates conf.json and terminates application)
 	configuration.TLS = configuration.DoTLS()
-	ormus.SetDefaults(
+	session.SetDefaults(
 		util.Abs(util.CatPath(util.GetDirectory(util.Abs(config.DefaultConfigFile)), configuration.Database)),
 		configuration.DatabaseType,
 		-1)
