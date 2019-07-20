@@ -32,9 +32,6 @@ var (
 )
 
 // GinConfigure configures gin.Engine.
-// if justIndex is set to true, we just rebuild our indexes.
-// We currently are not exposing this to http as our "/refresh/:target"
-// path allows us to refresh a single index as needed.
 func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 
 	DefaultFile := util.Abs(util.Cat(c.Root.Directory, "\\", c.Root.Default))
@@ -83,7 +80,6 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 		router.Any("/json-index", c.serveJSONIndex)
 		router.Any("/pan/:path/*action", func(g *gin.Context) { c.servePandoc(c.Pandoc.HTMLTemplate, pandoctemplate, g) })
 		router.Any("/meta/:path/*action", func(g *gin.Context) { c.servePandoc(c.Pandoc.MetaTemplate, pandoctemplate, g) })
-
 	}
 	c.initializeModels()
 

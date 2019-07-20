@@ -23,18 +23,16 @@ type LogonModel struct {
 }
 
 var (
-	_safeHandlers   = wrapup(strings.Split("login,register,logout", ",")...)
 	_unSafeHandlers = wrapup(strings.Split("json,json-index,pan,meta,json,refresh,tag,jtag", ",")...)
 )
 
-func (c *Configuration) initServerLogin(router *gin.Engine) bool {
+func (c *Configuration) initServerLogin(router *gin.Engine) {
 	// fmt.Println("--> LOGON SESSIONS SUPPORTED")
 	router.Use(c.sessMiddleware)
 	router.Any("/logout/", c.serveLogout)
 	router.Any("/login/", c.serveLogin)
 	router.Any("/register/", c.serveRegister)
 	router.Any("/stat/", c.serveUserStatus)
-	return true
 }
 
 func isunsafe(input string) bool {
