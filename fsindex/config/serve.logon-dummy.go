@@ -3,11 +3,14 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
 func (c *Configuration) initServerLogin(router *gin.Engine) {
-	// fmt.Println("--> LOGON SESSIONS NOT SUPPORTED")
+	fmt.Println("--> LOGON SESSIONS NOT SUPPORTED")
+	router.Use(c.sessMiddleware)
 	// do nothing
 }
 
