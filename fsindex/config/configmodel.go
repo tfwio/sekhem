@@ -137,11 +137,11 @@ func (c *Configuration) createEntry(path IndexPath, settings fsindex.Settings) f
 					SHA1:     util.Sha1String(path.Source),
 				},
 				IsRoot: true},
-			FauxPath:    c.GetPath(path.Target),
-			FileFilter:  c.Extensions,
-			IgnorePaths: []string{},
+			FauxPath:   c.GetPath(path.Target),
+			FileFilter: c.Extensions,
 		},
-		Settings: settings,
+		Settings:    settings,
+		IgnorePaths: []string{},
 	}
 	buildFileSystemModel(&pe)
 	return pe

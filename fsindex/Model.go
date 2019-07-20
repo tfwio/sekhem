@@ -26,6 +26,7 @@ type Settings struct {
 // Model is the same as PathEntry but with Settings
 type Model struct {
 	PathEntry
+	IgnorePaths []string `json:"ignore,omitempty"`
 	SimpleModel `json:"-"`
 	Settings    `json:"-"`
 }

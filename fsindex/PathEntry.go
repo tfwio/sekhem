@@ -12,9 +12,8 @@ import (
 type PathEntry struct {
 	PathSpec
 
-	FileFilter  []FileSpec `json:"-"`
-	Index       int32      `json:"id"`
-	IgnorePaths []string   `json:"-"`
+	FileFilter []FileSpec `json:"-"`
+	Index      int32      `json:"id"`
 	// FauxPath is only set on the root item and is
 	// used to portray a URI from a relative path.
 	FauxPath string `json:"uri,omitempty"`
@@ -77,12 +76,6 @@ func (p *PathEntry) Review(mRoot *Model, cbPath *CBPath, cbFile *CBFile) {
 // parameter `callback (RefreshAction)` is a method (if defined) which
 //                                      can be used arbitrarily.
 func (p *PathEntry) Refresh(model *Model, counter *(int32), handler *Handlers) {
-
-	if p.IsRoot {
-		for i := 0; i < len(p.IgnorePaths); i++ {
-			p.IgnorePaths[i] = util.Abs(p.IgnorePaths[i])
-		}
-	}
 
 	p.Index = *counter // Assign index
 	*counter++

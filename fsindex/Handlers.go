@@ -53,26 +53,11 @@ func (p *PathEntry) getFilter(rootPathEntry *Model) map[string]*FileSpec {
 // Handlers structure which contains callbacks for our `Refresh(…)`.
 func (p *PathEntry) RefreshCB(rootPathEntry *Model, counter *(int32), cbPath *CBPath, cbFile *CBFile) {
 
-	// create a reference node pointing to the tree-root
-	var mRoot *Model
-
-	// if the first parent element is root, we need to build some
-	// reference memory (dictionary of ignore-paths).
-	if p.IsRoot {
-		mRoot = &Model{PathEntry: *p}
-		// build absolute path list to ignore.
-		for i := 0; i < len(p.IgnorePaths); i++ {
-			p.IgnorePaths[i], _ = filepath.Abs(p.IgnorePaths[i])
-		}
-	} else {
-		mRoot = rootPathEntry // assign mRoot
-	}
-
 	p.Index = *counter // Assign index
 	*counter++
 
 	if cbPath != nil {
-		if (*cbPath)(mRoot, p) {
+		if (*cbPath)(rootPathEntry, p) {
 			return
 		}
 	}
@@ -106,15 +91,15 @@ func (p *PathEntry) RefreshCB(rootPathEntry *Model, counter *(int32), cbPath *CB
 						Extension: filepath.Ext(mFullPath),
 					}
 
-					if mRoot.HardLinks {
-						child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.RootedPath(mRoot)))
+					if rootPathEntry.HardLinks {
+						child.Path = util.UnixSlash(util.Cat(rootPathEntry.FauxPath, "/", child.RootedPath(rootPathEntry)))
 					} else {
-						child.Path = util.UnixSlash(child.RootedPath(mRoot))
+						child.Path = util.UnixSlash(child.RootedPath(rootPathEntry))
 					}
 					// array.
 					p.Files = append(p.Files, child)
 					if cbFile != nil {
-						if (*cbFile)(mRoot, &child) {
+						if (*cbFile)(rootPathEntry, &child) {
 							return
 						}
 						// println(fmt.Sprintf("  - %s", child.Base()))
@@ -149,19 +134,19 @@ func (p *PathEntry) RefreshCB(rootPathEntry *Model, counter *(int32), cbPath *CB
 				},
 			}
 
-			if mRoot.HardLinks {
-				child.Path = util.UnixSlash(util.Cat(mRoot.FauxPath, "/", child.RootedPath(mRoot)))
+			if rootPathEntry.HardLinks {
+				child.Path = util.UnixSlash(util.Cat(rootPathEntry.FauxPath, "/", child.RootedPath(rootPathEntry)))
 			} else {
-				child.Path = util.UnixSlash(child.RootedPath(mRoot))
+				child.Path = util.UnixSlash(child.RootedPath(rootPathEntry))
 			}
 
-			if child.IsIgnore(mRoot) {
+			if child.IsIgnore(rootPathEntry) {
 
 				fmt.Printf("- ignored: %s\n", child.FullPath)
 
 			} else {
 
-				child.RefreshCB(mRoot, counter, cbPath, cbFile)
+				child.RefreshCB(rootPathEntry, counter, cbPath, cbFile)
 
 				p.Paths = append(p.Paths, child)
 			}
