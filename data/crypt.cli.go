@@ -99,7 +99,7 @@ func main() {
 			println("- you must supply a password > len(4) chars long")
 		}
 	case "list":
-		ormus.SessionCLIList()
+		ormus.CLIList()
 	default:
 		println()
 		flag.PrintDefaults()

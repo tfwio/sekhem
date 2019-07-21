@@ -57,7 +57,7 @@ func (c *Configuration) sessMiddleware(g *gin.Context) {
 	// ck := false
 
 	if isunsafe(g.Request.RequestURI) {
-		yn = session.SessionCookieValidate(c.SessionHost("sekhem"), g)
+		yn = session.QueryCookieValidate(c.SessionHost("sekhem"), g)
 		// ck = true
 		// fmt.Printf("--> session? %v %s\n", yn, g.Request.RequestURI)
 		// fmt.Printf("==> CHECK: %v, VALID: %v\n", ck, yn)
@@ -75,7 +75,7 @@ func (c *Configuration) sessMiddleware(g *gin.Context) {
 func (c *Configuration) serveUserStatus(g *gin.Context) {
 	sh := c.SessionHost("sekhem")
 	fmt.Println("==> CHECKING USER STATUS")
-	if sess, success := session.SessionCookie(sh, g); success {
+	if sess, success := session.QueryCookie(sh, g); success {
 		fmt.Printf("  ==> CLIENT COOKIE EXISTS; USER=%d\n", sess.UserID)
 		if u, success := sess.GetUser(); success && sess.IsValid() {
 			g.JSON(
@@ -107,7 +107,7 @@ func (c *Configuration) serveUserStatus(g *gin.Context) {
 func (c *Configuration) serveLogout(g *gin.Context) {
 	sh := c.SessionHost("sekhem")
 	fmt.Println("==> LOGOUT ATTEMPT")
-	sess, success := session.SessionCookie(sh, g)
+	sess, success := session.QueryCookie(sh, g)
 	if success {
 		fmt.Printf("  ==> CLIENT COOKIE EXISTS; USER=%d\n", sess.UserID)
 		session.SetCookieMaxAge(g, sh, sess.SessID, 0)

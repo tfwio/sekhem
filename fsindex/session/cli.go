@@ -1,12 +1,11 @@
-
 package session
 
 import "fmt"
 
-// SessionCLIList returns a  sessions for CLI.
+// CLIList returns a  sessions for CLI.
 // The method first fetches a list of User elements
 // then reports the Sessions with user-data (name).
-func SessionCLIList() []Session {
+func CLIList() []Session {
 	var users []User
 	var sessions []Session
 	db, err := iniC("error(session-cli-list) loading db\n")

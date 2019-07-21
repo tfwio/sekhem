@@ -1,4 +1,3 @@
-
 package session
 
 import (
@@ -117,13 +116,13 @@ func cookieValue(cookie *http.Cookie) string {
 	return cookieValue
 }
 
-// SessionCookieValidate checks against a provided salt and hash.
+// QueryCookieValidate checks against a provided salt and hash.
 // BUT FIRST, it checks for a valid session?
 //
 // - check if we have a session cookie
 //
 // - if so then...
-func SessionCookieValidate(cookieName string, client *gin.Context) bool {
+func QueryCookieValidate(cookieName string, client *gin.Context) bool {
 
 	clistr := getClientString(client)
 	cookie := getCookie(cookieName, client)
@@ -154,7 +153,7 @@ func SessionCookieValidate(cookieName string, client *gin.Context) bool {
 	return result
 }
 
-// SessionCookie looks in `sessions` table for a matching `sess_id`
+// QueryCookie looks in `sessions` table for a matching `sess_id`
 // and returns the matching `Session` if found or an empty session.
 // (bool) Success value tells us if a match was found.
 //
@@ -167,8 +166,8 @@ func SessionCookieValidate(cookieName string, client *gin.Context) bool {
 // - Returns `false` on error (with an empty session).
 //
 // - Returns `true` on success with a Session out of our database.
-func SessionCookie(host string, client *gin.Context) (Session, bool) {
-	// println("==> SessionCookie")
+func QueryCookie(host string, client *gin.Context) (Session, bool) {
+	// println("==> QueryCookie")
 	clistr := getClientString(client)
 	cookiesess := getCookieValue(host, client)
 
