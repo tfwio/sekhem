@@ -1,4 +1,3 @@
-// +build session
 
 package session
 
