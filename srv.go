@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/tfwio/sekhem/fsindex/session"
-
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 
@@ -16,6 +14,7 @@ import (
 
 	"github.com/tfwio/sekhem/fsindex/config"
 	"github.com/tfwio/sekhem/util"
+	"github.com/tfwio/session"
 )
 
 // Configuration variables
@@ -108,7 +107,7 @@ func initializeJSONConf() {
 	session.SetDefaults(
 		util.Abs(util.CatPath(util.GetDirectory(util.Abs(config.DefaultConfigFile)), configuration.Database)),
 		configuration.DatabaseType,
-		-1)
+		-1, -1)
 
 	if config.UseHost != "" {
 		configuration.Host = config.UseHost
