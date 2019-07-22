@@ -8,10 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tfwio/sekhem/util"
-
 	"github.com/gin-gonic/gin"
 	"github.com/tfwio/sekhem/fsindex/session"
+	"github.com/tfwio/sekhem/util"
 )
 
 // LogonModel responds to a login action such as "/login/" or (perhaps) "/login-refresh/"
@@ -110,7 +109,7 @@ func (c *Configuration) serveLogout(g *gin.Context) {
 	sess, success := session.QueryCookie(sh, g)
 	if success {
 		fmt.Printf("  ==> CLIENT COOKIE EXISTS; USER=%d\n", sess.UserID)
-		session.SetCookieMaxAge(g, sh, sess.SessID, 0)
+		session.SetCookieMaxAge(g, sh, sess.SessID, -1)
 		sess.Expires = time.Now()
 		if time.Now().Before(sess.Expires) {
 			// Found matching session from browser-cookie
@@ -154,9 +153,11 @@ func (c *Configuration) serveLogin(g *gin.Context) {
 
 	u := session.User{}
 	if !u.ByName(usr) {
+
 		println("  --> USER NOT FOUND!")
 		j.Detail = "No user record."
 		j.Status = false
+
 	} else {
 		// We have a valid user;
 		sess, success := u.UserSession(sh, g)
@@ -166,7 +167,7 @@ func (c *Configuration) serveLogin(g *gin.Context) {
 				if u.ValidatePassword(fpass) {
 					fmt.Println("  ==> PW:GOOD")
 					sess.Refresh(true)
-					session.SetCookieMaxAge(g, sh, sess.SessID, session.ConstCookieAge12H)
+					session.SetCookieExpires(g, sh, sess.SessID, sess.Expires)
 					session.SetCookieSessOnly(g, sh+"_xo", u.Name)
 					j.Detail = "Logged in."
 					j.Status = true
@@ -211,7 +212,7 @@ func (c *Configuration) serveRegister(g *gin.Context) {
 		// create a session for the user
 		e, sess := u.CreateSession(g, 12, sh, -1)
 		if !e {
-			session.SetCookieMaxAge(g, sh, sess.SessID, session.ConstCookieAge12H)
+			session.SetCookieExpires(g, sh, sess.SessID, sess.Expires)
 			session.SetCookieSessOnly(g, sh+"_xo", u.Name)
 			j.Status = true
 			j.Detail = "User and Session created."
