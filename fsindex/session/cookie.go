@@ -28,7 +28,7 @@ const (
 // to destroy the cookie as oppsed to using `SetCookieExpires`.
 // See `CookieDefaults` in order to override default settings.
 //
-// Note: *Like `github.com/gogonic/gin`, we are applying `url.QueryEscape`
+// Note: *Like `github.com/gin-gonic/gin`, we are applying `url.QueryEscape`
 // `value` stored to the cookie so be sure to UnEscape the value when retrieved.*
 func SetCookieMaxAge(cli *gin.Context, name string, value string, maxAge int) {
 	http.SetCookie(cli.Writer, &http.Cookie{
@@ -46,7 +46,7 @@ func SetCookieMaxAge(cli *gin.Context, name string, value string, maxAge int) {
 //
 // See `CookieDefaults` in order to override default settings.
 //
-// Note: *Like `github.com/gogonic/gin`, we are applying `url.QueryEscape`
+// Note: *Like `github.com/gin-gonic/gin`, we are applying `url.QueryEscape`
 // `value` stored to the cookie so be sure to UnEscape the value when retrieved.*
 func SetCookieSessOnly(cli *gin.Context, name string, value string) {
 	http.SetCookie(cli.Writer, &http.Cookie{
@@ -63,7 +63,7 @@ func SetCookieSessOnly(cli *gin.Context, name string, value string) {
 // Will use Expires (as opposed to `SetCookieMaxAge`).
 // See `CookieDefaults` in order to override default settings.
 //
-// Note: *Like `github.com/gogonic/gin`, we are applying `url.QueryEscape`
+// Note: *Like `github.com/gin-gonic/gin`, we are applying `url.QueryEscape`
 // `value` stored to the cookie so be sure to UnEscape the value when retrieved.*
 func SetCookieExpires(cli *gin.Context, name string, value string, expire time.Time) {
 	http.SetCookie(cli.Writer, &http.Cookie{

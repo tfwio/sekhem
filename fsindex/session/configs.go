@@ -1,4 +1,3 @@
-
 package session
 
 import (
@@ -7,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tfwio/sekhem/util"
 )
 
 var (
@@ -50,16 +48,16 @@ func getClientString(client interface{}) string {
 	// cess := ""
 	switch c := client.(type) {
 	case *gin.Context:
-		clistr = util.ToUBase64(c.ClientIP())
+		clistr = toUBase64(c.ClientIP())
 		break
 	case *http.Request:
-		clistr = util.ToUBase64(c.RemoteAddr)
+		clistr = toUBase64(c.RemoteAddr)
 		break
 	case string:
-		clistr = util.ToUBase64(c)
+		clistr = toUBase64(c)
 		break
 	default:
-		clistr = util.ToBase64(unknownclient)
+		clistr = toBase64(unknownclient)
 		break
 	}
 	return clistr

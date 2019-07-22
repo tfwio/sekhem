@@ -1,4 +1,4 @@
-[github.com/dhowden/tag]:         https://github.com/dhowden/tag "github.com/gogonic/gin"
+[github.com/dhowden/tag]:         https://github.com/dhowden/tag "github.com/gin-gonic/gin"
 [github.com/gin-gonic/gin]:       https://github.com/gin-gonic/gin
 [github.com/jinzhu/gorm]:         https://github.com/jinzhu/gorm
 [github.com/urfave/cli]:          https://github.com/urfave/cli
@@ -63,7 +63,7 @@ GO111MODULE=on GOOS=windows GOARCH=amd64 go build -tags 'jsoniter session' -o sr
 
 Just be sure that the vendor libs are downloaded.  If the build process
 complains that you're missing dependencies, you'll have to `go get` any such lib.  
-For example, to use gogonic/gin's `-tags=jsoniter` tag we'll provide the
+For example, to use gin-gonic/gin's `-tags=jsoniter` tag we'll provide the
 [json-iterator][github.com/json-iterator/go] dependency.  
 `go get github.com/json-iterator/go`
 
