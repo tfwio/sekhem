@@ -24,8 +24,8 @@ do_init(){
     case "${i}" in
       bootstrap | bs)
         export GO111MODULE=on
-        echo "- go and get github.com/json-iterator/go (a gogonic/gin \`-tags=jsoniter\` extension)"
-        echo " ** a gogonic/gin \`-tags=jsoniter\` extension **"
+        echo "- go and get github.com/json-iterator/go (a gin-gonic/gin \`-tags=jsoniter\` extension)"
+        echo " ** a github.com/gin-gonic/gin \`-tags=jsoniter\` extension **"
         go get github.com/json-iterator/go
         echo "- downloading vendor-libs"
         go mod vendor

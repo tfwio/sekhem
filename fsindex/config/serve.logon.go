@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tfwio/sekhem/fsindex/session"
 	"github.com/tfwio/sekhem/util"
+	"github.com/tfwio/session"
 )
 
 // LogonModel responds to a login action such as "/login/" or (perhaps) "/login-refresh/"
