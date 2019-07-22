@@ -1,4 +1,3 @@
-
 package session
 
 import (
@@ -35,7 +34,8 @@ func (s *Session) IsValid() bool {
 // Refresh will update the `Session.Expires` date AND
 // the `SessID` with new values.
 func (s *Session) Refresh(andSave bool) {
-	s.Expires = time.Now().Add(durationHrs(cookieAgeHrs))
+	s.Created = time.Now()
+	s.Expires = s.Created.Add(durationHrs(cookieAgeHrs))
 	s.SessID = util.ToUBase64(util.NewSaltString(saltsize))
 	if andSave {
 		s.Save()
