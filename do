@@ -30,11 +30,6 @@ do_init(){
         echo "- downloading vendor-libs"
         go mod vendor
         ;;
-      crypt | login)
-        export GO111MODULE=on
-        echo go build -tags=session -o login.exe data/crypt.cli.go
-        go build -tags=session -o login.exe data/crypt.cli.go
-        ;;
       mod)
         export GO111MODULE=on
         export buildmod="-mod vendor "
@@ -78,6 +73,7 @@ do_vendor(){
         if [[ x$CK != xtrue ]]; then do_init mod ; fi
         echo ==\> check/download vendor stuff
         go mod vendor
+        go mod download
         ;;
     esac
   done
@@ -89,8 +85,12 @@ do_build(){
     case "${i}" in
       build)
         echo building
-        echo go build -tags \'jsoniter session\' -o srv-${GOARCH}.exe ${buildmod} *.go
-        go build -tags 'jsoniter session' -o srv-${GOARCH}.exe ${buildmod} *.go
+
+        echo go clean
+        go clean
+
+        echo go build -tags jsoniter -o srv-${GOARCH}.exe ${buildmod} srv.go
+        go build -tags jsoniter -o srv-${GOARCH}.exe ${buildmod} srv.go
         ;;
     esac
   done
@@ -141,8 +141,8 @@ do_copy(){
         go build -o m2.exe util/m2.go
         ;;
       cp2)
-        echo GO111MODULE=on go build -tags \'jsoniter session\' -o srv.exe -mod vendor srv.go \&\& cp -f  srv.exe ${copyto}
-        GO111MODULE=on go build -tags='jsoniter session' -o srv.exe -mod vendor srv.go && cp -f  srv.exe ${copyto}
+        echo GO111MODULE=on go build -tags jsoniter -o srv.exe -mod vendor srv.go \&\& cp -f  srv.exe ${copyto}
+        GO111MODULE=on go build -tags jsoniter -o srv.exe -mod vendor srv.go && cp -f  srv.exe ${copyto}
         ;;
       tofo)
         echo copying to

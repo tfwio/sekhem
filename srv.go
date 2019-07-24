@@ -14,7 +14,6 @@ import (
 
 	"github.com/tfwio/sekhem/fsindex/config"
 	"github.com/tfwio/sekhem/util"
-	"github.com/tfwio/session"
 )
 
 // Configuration variables
@@ -104,10 +103,6 @@ func initializeJSONConf() {
 	configuration.InitializeDefaults(defaultConfPath, defaultConfTarget)
 	configuration.FromJSON(config.DefaultConfigFile) // loads (or creates conf.json and terminates application)
 	configuration.TLS = configuration.DoTLS()
-	session.SetDefaults(
-		util.Abs(util.CatPath(util.GetDirectory(util.Abs(config.DefaultConfigFile)), configuration.Database)),
-		configuration.DatabaseType,
-		-1, -1)
 
 	if config.UseHost != "" {
 		configuration.Host = config.UseHost

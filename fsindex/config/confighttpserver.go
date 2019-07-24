@@ -5,8 +5,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/tfwio/sekhem/fsindex"
 	"github.com/tfwio/sekhem/util"
+	"github.com/tfwio/session"
 )
 
 var (
@@ -37,8 +39,24 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 	DefaultFile := util.Abs(util.Cat(c.Root.Directory, "\\", c.Root.Default))
 	if andServe {
 
-		c.initServerLogin(router)
-
+		session.SetupService(
+			session.Service{
+				AppID:              "sekhem",
+				Port:               c.Port,  // Port is used for
+				CookieHTTPOnly:     true,    // hymmm
+				CookieSecure:       false,   // we want to see em in the browser
+				KeyResponse:        "valid", // default: session.isValid
+				AdvanceOnKeepYear:  0,       // 0
+				AdvanceOnKeepMonth: 6,       // 6
+				AdvanceOnKeepDay:   0,       // 0
+				UnsafeURI:          []string{"/index/", "/this/", "/that"},
+				CheckURIHandler:    nil,
+				FormSession:        session.FormSession{User: "user", Pass: "pass", Keep: "keep"},
+			},
+			router,
+			c.DatabaseType,
+			util.Abs(util.CatPath(util.GetDirectory(util.Abs(DefaultConfigFile)), c.Database)),
+			-1, -1)
 		fmt.Printf("default\n  > Target = %-18s, Source =  %s\n", c.Root.Path, DefaultFile)
 
 		router.StaticFile(c.Root.Path, DefaultFile)
