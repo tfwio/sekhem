@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -32,6 +34,27 @@ var (
 	xCounter       int32
 	fCounter       int32
 )
+var sessions = session.Service{
+	AppID:               "sekhem",
+	CookieHTTPOnly:      true,  // hymmm
+	CookieSecure:        false, // we want to see em in the browser
+	KeySessionIsValid:   "valid",
+	KeySessionIsChecked: "checked",
+	AdvanceOnKeepYear:   0, // 0
+	AdvanceOnKeepMonth:  6, // 6
+	AdvanceOnKeepDay:    0, // 0
+	URICheck:            session.WrapURIExpression("/json-index/?$,/json/?$"),
+	URIEnforce:          []string{},
+	URIMatchHandler: func(uri, unsafe string) bool {
+		tomatch := fmt.Sprintf("^%s", unsafe)
+		fmt.Fprintf(os.Stderr, "checking: %s\n", tomatch)
+		if match, err := regexp.MatchString(tomatch, uri); err == nil {
+			return match
+		}
+		return false
+	},
+	FormSession: session.FormSession{User: "user", Pass: "pass", Keep: "keep"},
+}
 
 // GinConfigure configures gin.Engine.
 func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
@@ -39,23 +62,11 @@ func (c *Configuration) GinConfigure(andServe bool, router *gin.Engine) {
 	DefaultFile := util.Abs(util.Cat(c.Root.Directory, "\\", c.Root.Default))
 	if andServe {
 
+		sessions.Port = c.Port
+
 		session.SetupService(
-			session.Service{
-				AppID:              "sekhem",
-				Port:               c.Port,  // Port is used for
-				CookieHTTPOnly:     true,    // hymmm
-				CookieSecure:       false,   // we want to see em in the browser
-				KeyResponse:        "valid", // default: session.isValid
-				AdvanceOnKeepYear:  0,       // 0
-				AdvanceOnKeepMonth: 6,       // 6
-				AdvanceOnKeepDay:   0,       // 0
-				UnsafeURI:          []string{"/index/", "/this/", "/that"},
-				CheckURIHandler:    nil,
-				FormSession:        session.FormSession{User: "user", Pass: "pass", Keep: "keep"},
-			},
-			router,
-			c.DatabaseType,
-			util.Abs(util.CatPath(util.GetDirectory(util.Abs(DefaultConfigFile)), c.Database)),
+			&sessions, router,
+			c.DatabaseType, util.Abs(util.CatPath(util.GetDirectory(util.Abs(DefaultConfigFile)), c.Database)),
 			-1, -1)
 		fmt.Printf("default\n  > Target = %-18s, Source =  %s\n", c.Root.Path, DefaultFile)
 

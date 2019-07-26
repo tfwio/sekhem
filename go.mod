@@ -7,6 +7,6 @@ require (
 	github.com/gin-gonic/gin v1.4.0
 	github.com/jinzhu/gorm v1.9.10
 	github.com/mattn/go-sqlite3 v1.11.0
-	github.com/tfwio/session v0.0.0-20190724215048-0fa4be14d9f4
+	github.com/tfwio/session v0.0.0-20190726044640-8114ddc5a07d
 	github.com/urfave/cli v1.20.0
 )

@@ -15,8 +15,10 @@ type JSONIndex struct {
 
 func (c *Configuration) serveJSONIndex(g *gin.Context) {
 
-	loggedIn1, _ := g.Get("valid")
-	loggedIn := loggedIn1.(bool)
+	loggedIn := false
+	if loggedIn1, success := g.Get("valid"); success {
+		loggedIn = loggedIn1.(bool)
+	}
 
 	xdata := JSONIndex{} // xdata indexes is just a string array map.
 	xdata.Index = []string{}
