@@ -1,0 +1,17 @@
+
+Sources were taken and or modified from the following
+
+Though not implemented...(yet)
+
+  Sean Killian @ Paperless Solutions
+
+    https://github.com/skillian
+      https://github.com/skillian/getfiletime/blob/master/getfiletime.go
+    license: Unlicens
+
+HTTP(S) server abstraction(s)
+
+  gin-gogonic/gin authors...
+
+    https://github.com/gin-gonic/gin/blob/master/AUTHORS.md
+

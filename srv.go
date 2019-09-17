@@ -12,8 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/urfave/cli"
 
-	"github.com/tfwio/sekhem/fsindex/config"
-	"github.com/tfwio/sekhem/util"
+	"github.com/tfwio/srv/fsindex/config"
+	"github.com/tfwio/srv/util"
 )
 
 // Configuration variables

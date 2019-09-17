@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tfwio/sekhem/util"
+	"github.com/tfwio/srv/util"
 )
 
 // JSONIndex — a simple container for JSON.

@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/tfwio/sekhem/util"
+	"github.com/tfwio/srv/util"
 )
 
 // MediaInfo struct is just what it says.

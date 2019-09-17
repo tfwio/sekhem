@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tfwio/sekhem/util"
+	"github.com/tfwio/srv/util"
 )
 
 // FileEntry ...

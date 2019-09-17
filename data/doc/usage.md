@@ -1,4 +1,4 @@
-[home]: ../../readme.md "github.com/tfwio/sekhem/readme.md"
+[home]: ../../readme.md "github.com/tfwio/srv/readme.md"
 [features]: features.md
 [configuration]: configuration.md
 [build]: build.md
@@ -53,7 +53,7 @@ GLOBAL OPTIONS:
    --version, -v  print the version
 
 COPYRIGHT:
-   github.com/tfwio/sekhem
+   github.com/tfwio/srv
 
    This is free, open-source software.
    disclaimer: use at own risk.

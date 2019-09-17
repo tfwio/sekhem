@@ -20,16 +20,32 @@ if [[ "x${MSYSTEM}" == "xMSYS" || "x${MSYSTEM}" == "xMINGW32" || "x${MSYSTEM}" =
   fi
 fi
 function doConvert(){
+  # create array to store file path
   myfiles=()
+  # populate array with file paths #1
   for n in ./{fsindex,fsindex/config,fsindex/ormus,util,util/pandoc}/*.go ; do
     myfiles+=(${n})
   done
+  # populate array with file paths #2
   for n in {go.mod,data/crypt.cli.go,srv.go}; do
     myfiles+=(${n})
   done
+  # populate array with file paths #3
+  for n in ./data/doc/*.md; do
+    myfiles+=(${n})
+  done
+  # I don't know why this is named sekhm
   if [ "x${1}" == "xsekhm" ]; then
     sekhm='s/tfw\.io\/Go\/fsindex/github.com\/tfwio\/sekhem/g'
     # echo "${sekhm}"
+    for n in "${myfiles[@]}" ; do
+      echo processing ${n}
+      sed -e "${sekhm}" ${n} --in-place=''
+    done
+  elif [ "x${1}" == "xsek2srv" ]; then
+    sekhm='s/github\.com\/tfwio\/sekhem/github\.com\/tfwio\/srv/g'
+    # echo "${sekhm}"
+    echo sek2srv
     for n in "${myfiles[@]}" ; do
       echo processing ${n}
       sed -e "${sekhm}" ${n} --in-place=''
@@ -58,6 +74,11 @@ function doConvert(){
 for i in "$@"
 do
   case "${i}" in
+    github | sek2srv)
+      doConvert sek2srv
+      doConvert unix2dos
+      exit 0
+      ;;
     github | sekhem)
       doConvert sekhem
       doConvert unix2dos
@@ -90,6 +111,13 @@ on all the project's *.go files and the go.mod file.
 
 Usage
 -------------------
+
+  ./data/scripts/cvt sek2srv
+
+This script has too many switches for conversion. Of all the
+SED regex lines defined in IF statements above, only two might
+be necessary depending on where this repository is located.
+One to switch to github and one to switch to a local gitea repo.
 
 to prepare sources for a commit to github:
 

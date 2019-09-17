@@ -6,7 +6,7 @@
 [github.com/jgm/pandoc]:          https://github.com/jgm/pandoc
 [github.com/jgm/pandoc/releases]: https://github.com/jgm/pandoc/releases
 [github.com/json-iterator/go]:    https://github.com/json-iterator/go
-[home]: ../../readme.md "github.com/tfwio/sekhem/readme.md"
+[home]: ../../readme.md "github.com/tfwio/srv/readme.md"
 [features]: features.md
 [configuration]: configuration.md
 [build]: build.md
@@ -29,11 +29,11 @@ if you experience an OS related issue, PRs and bug-report/discussion are welcome
 go get it
 
 ```bash
-go get github.com/tfwio/sekhem
+go get github.com/tfwio/srv
 ```
 go to the project directory
 ```bash
-pushd ${GOPATH}/src/github.com/tfwio/sekhem
+pushd ${GOPATH}/src/github.com/tfwio/srv
 ```
 run the bootstrap script
 ```bash
@@ -82,7 +82,7 @@ Golang Development Libs Used
 
 as depicted by the `go.mod` file
 ```go
-module github.com/tfwio/sekhem
+module github.com/tfwio/srv
 
 go 1.12
 

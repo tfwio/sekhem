@@ -8,8 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/tfwio/sekhem/fsindex"
-	"github.com/tfwio/sekhem/util"
+	"github.com/tfwio/srv/fsindex"
+	"github.com/tfwio/srv/util"
 	"github.com/tfwio/session"
 )
 

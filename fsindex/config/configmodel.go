@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tfwio/sekhem/fsindex"
-	"github.com/tfwio/sekhem/util"
+	"github.com/tfwio/srv/fsindex"
+	"github.com/tfwio/srv/util"
 )
 
 func buildFileSystemModel(model *fsindex.Model) {
@@ -109,18 +109,20 @@ func (c *Configuration) initializeModel(path *IndexPath) {
 
 	fmt.Printf("--> indexing: %s\n", path.Target)
 	model := c.createEntry(*path, c.IndexCfg)
+	//
 	if _, ok := mdlMap[util.AbsBase(path.Source)]; !ok {
 		models = append(models, model)
 	} else {
 		if index, ok := c.getModelIndex(&model); ok {
 			models[index] = model
-			println("Injecting memory-Model %s at index %d", mdlMap[model.Name].Name, index)
+			fmt.Printf("Injecting memory-Model %s at index %d\n", mdlMap[model.Name].Name, index)
 		}
 	}
+
 	if index, ok := c.getModelIndex(&model); ok {
 		mdlMap[model.Name] = &models[index]
 	} else {
-		panic("Could not find memory-Model")
+		panic(fmt.Sprintf("Could not find memory-Model: %s\n", model.Name))
 	}
 }
 

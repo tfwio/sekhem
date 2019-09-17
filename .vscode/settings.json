@@ -1,6 +1,7 @@
 {
   // // these are just suggested settings for msys2 windows
-
+  "go.gotoSymbol.includeImports": true,
+  "go.vetFlags": ["-flags \"sessembed session\""],
   // //"editor.fontFamily": "Fira Code, Consolas, 'Courier New', monospace",
   // //"editor.fontLigatures": true, 
   // "go.formatTool": "goimports",

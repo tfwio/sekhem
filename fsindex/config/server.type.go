@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/tfwio/sekhem/util"
+	"github.com/tfwio/srv/util"
 )
 
 // Server info for JSON i/o.

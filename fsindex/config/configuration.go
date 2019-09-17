@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tfwio/sekhem/fsindex"
-	"github.com/tfwio/sekhem/util"
-	"github.com/tfwio/sekhem/util/pandoc"
+	"github.com/tfwio/srv/fsindex"
+	"github.com/tfwio/srv/util"
+	"github.com/tfwio/srv/util/pandoc"
 )
 
 // Configuration is for JSON i/o.
