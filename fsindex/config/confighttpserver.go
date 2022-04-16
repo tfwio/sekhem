@@ -2,15 +2,14 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/tfwio/session"
 	"github.com/tfwio/srv/fsindex"
 	"github.com/tfwio/srv/util"
-	"github.com/tfwio/session"
 )
 
 var (
@@ -47,7 +46,7 @@ var sessions = session.Service{
 	URIEnforce:          []string{},
 	URIMatchHandler: func(uri, unsafe string) bool {
 		tomatch := fmt.Sprintf("^%s", unsafe)
-		fmt.Fprintf(os.Stderr, "checking: %s\n", tomatch)
+		// fmt.Fprintf(os.Stderr, "checking: %s\n", tomatch)
 		if match, err := regexp.MatchString(tomatch, uri); err == nil {
 			return match
 		}

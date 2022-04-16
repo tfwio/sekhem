@@ -34,11 +34,13 @@ go get github.com/tfwio/srv
 go to the project directory
 ```bash
 pushd ${GOPATH}/src/github.com/tfwio/srv
+go mod init
+go mod vendor
+go clean -r -cache
+go build -v -mod vendor
 ```
-run the bootstrap script
-```bash
-./do bootstrap
-```
+
+
 environment variable ${GOARCH} is targeted by default  
 build targeting your native OS.
 ```bash

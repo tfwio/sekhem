@@ -1,23 +1,10 @@
-<p>$for(include-before)$ $include-before$ $endfor$
-
-$if(title)$
-  <header style="text-align: center;">
-    <h1 class="title">$title$</h1>
-    $if(subtitle)$ <h2 class="subtitle">$subtitle$</h2> $endif$
-    $if(date)$ <span class="date">$date$</span> $endif$
-  </header>
-$endif$
-
-  $if(description)$ <description style="margin: 0.125IN; padding: 0.5IN; background: silver">$description$</description> $endif$
-  $if(abstract)$ <abstract>$abstract$</abstract> $endif$
-  $if(summary)$ <summary>$summary$</summary> $endif$
-  $if(thanks)$ $thanks$ $endif$
-
-  $if(toc)$
-  <nav id="$idprefix$TOC">
-    <h3>TOC</h3>
-    $toc$
-  </nav>
-  $endif$
-  
-  $body$ $for(include-after)$ $include-after$ $endfor$
+{
+  "title": $if(title)$ "$title$", $endif$
+  "subtitle": $if(subtitle)$ "$subtitle$", $endif$
+  "date": $if(date)$ "$date$", $endif$
+  "description": $if(description)$ "$description$", $endif$
+  "abstract": $if(abstract)$ "$abstract$", $endif$
+  "summary": $if(summary)$ "$summary$", $endif$
+  "thanks": $if(thanks)$ "$thanks$", $endif$
+  "_terminal": ""
+}

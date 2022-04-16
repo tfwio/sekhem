@@ -6,9 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	_ "github.com/mattn/go-sqlite3"
-
 	"github.com/gin-gonic/gin"
 	"github.com/urfave/cli"
 
@@ -31,30 +28,45 @@ func main() {
 	initializeCli()
 }
 
+func misterActionFunction(*cli.Context) error {
+	initialize(true)
+	return nil
+}
+
 func initializeCli() {
+	// mCli := cli.NewApp()
 	mCli.Name = filepath.Base(os.Args[0])
-	mCli.Authors = []cli.Author{cli.Author{Name: "tfw; et alia" /*, Email: "tfwroble@gmail.com"}, cli.Author{Name: "Et al."*/}}
-	mCli.Version = "v0.0.0"
-	mCli.Copyright = "tfwio.github.com/go-fsindex\n\n   This is free, open-source software.\n   disclaimer: use at own risk."
-	mCli.Action = func(*cli.Context) { initialize(true) }
+	mCli.Authors = []cli.Author{{Name: "tfw; et alia" /*, Email: "tfwroble@gmail.com"}, cli.Author{Name: "Et al."*/}}
+	mCli.Version = "v0.0.0a"
+	mCli.Copyright = "github.com/tfwio/srv\n\n   This is free, open-source software.\n   disclaimer: use at own risk."
+
+	mCli.Action = func(*cli.Context) error {
+		initialize(true)
+		return nil
+	}
+
 	mCli.Commands = []cli.Command{
-		cli.Command{
-			Name:        "run",
-			Action:      func(*cli.Context) { initialize(true) },
+		{
+			Name: "run",
+			Action: func(*cli.Context) error {
+				initialize(true)
+				return nil
+			},
 			Usage:       "Runs the server.",
 			Description: "Default operation.",
 			Aliases:     []string{"go"},
 			Flags:       []cli.Flag{},
 		},
-		cli.Command{
+		{
 			Name:        "make-conf",
 			Description: "Generate configuration file: <[file-path].json>.",
 			Usage:       fmt.Sprintf("%s make-conf <[file-path].json>", filepath.Base(os.Args[0])),
 			Flags:       []cli.Flag{},
-			Action: func(clictx *cli.Context) {
+			Action: func(clictx *cli.Context) error {
 				if clictx.NArg() == 0 {
 					fmt.Println("- supply a file-name to generate.\nI.E. \"conf.json\"")
 					os.Exit(0)
+					return nil
 				}
 				fmt.Printf("- found %s\n", util.Abs(clictx.Args().First()))
 				thearg := clictx.Args().First()
@@ -62,35 +74,33 @@ func initializeCli() {
 				if util.FileExists(input) {
 					fmt.Printf("- please delete the file (%s) before calling this command\n", thearg)
 					os.Exit(0)
+					return nil
 				}
 				configuration.InitializeDefaults(defaultConfPath, defaultConfTarget)
 				configuration.ToJSON(input)
+				return nil
 			},
 		}}
 	mCli.Flags = []cli.Flag{
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:        "tls",
 			Destination: &config.UseTLS,
 			Usage:       "Sets TLS on.  This only works if/when tls is set in conf.json to false, and if you have valid tls cert/key files wired into the configuration.",
-		},
-		cli.StringFlag{
+		}, &cli.StringFlag{
 			Name:        "host",
 			Destination: &config.UseHost,
 			Usage:       "UseHost is identifies the host to use to over-ride JSON config.",
-		},
-		cli.UintFlag{
+		}, &cli.UintFlag{
 			Name:        "port",
 			Destination: &config.UsePORT,
 			Value:       5500,
 			Usage:       "UseHost is identifies the host to use to over-ride JSON config.",
-		},
-		cli.StringFlag{
+		}, &cli.StringFlag{
 			Name:        "conf",
 			Usage:       "Points to a custom configuration file.",
 			Value:       config.DefaultConfigFile,
 			Destination: &config.DefaultConfigFile,
-		},
-	}
+		}}
 	mCli.Run(os.Args)
 }
 
